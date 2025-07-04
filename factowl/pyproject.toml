@@ -1,0 +1,53 @@
+[build-system]
+# Minimum versions that understand PEP-621 and setuptools-scm
+requires = [
+  "setuptools>=69",
+  "setuptools-scm[toml]>=8",
+  "wheel>=0.43",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "factowl"
+# The version is taken from your Git tags (setuptools-scm)
+version = "0.2.2"
+description = "Tools for fact extraction, scoring and LLM evaluation (FactOwl)"
+readme = "README.md"
+authors = [
+  {name = "Andrey Sakhovsky and Nikita Sushko and Skoltech NLP Lab", email = "sushko@airi.net"},
+]
+license = {file = "LICENSE"}
+requires-python = ">=3.9"
+
+# Only **runtime** dependencies go here.
+# Keep the list small—extras can pull in heavier stacks (see below).
+dependencies = [
+  "nltk==3.9.1",
+  "openai==1.88.0",
+  "pandas==2.3.0",
+  "python-dateutil==2.9.0.post0",
+  "pytz==2025.2",
+  "sentence-transformers==4.1.0",
+  "spacy-legacy==3.0.12",
+  "spacy-loggers==1.0.5",
+  "spacy==3.8.7",
+  "transformers==4.52.4",
+  "vllm==0.9.1",
+  "wikipedia==1.4.0",
+  "rank-bm25==0.2.2"
+]
+
+[project.urls]
+Homepage = "https://github.com/s-nlp/factowl"
+Documentation = "https://github.com/s-nlp/factowl#readme"
+Source = "https://github.com/s-nlp/factowl"
+Issues = "https://github.com/s-nlp/factowl/issues"
+
+[tool.setuptools]                 # ← delete package-dir
+[tool.setuptools.packages.find]
+where   = ["."]
+include = ["factowl*"]
+
+[tool.setuptools_scm]
+# No config needed unless you want custom tag prefixes; default is fine.
+
