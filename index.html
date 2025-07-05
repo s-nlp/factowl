@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <!-- Meta tags for social media banners, these should be filled in appropriatly as they are your "business card" -->
+  <!-- Replace the content tag with appropriate information -->
+  <meta name="description" content="FactOWL: A Cost-Efficient Tool for Long-Form Factuality Evaluation">
+  <meta property="og:title" content="FactOWL"/>
+  <meta property="og:description" content="A Cost-Efficient Tool for Long-Form Factuality Evaluation"/>
+  <meta property="og:url" content="https://s-nlp.github.io/factowl/"/>
+  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X630-->
+  <meta property="og:image" content="static/images/factowl_overview.png" />
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+
+
+  <meta name="twitter:title" content="FactOWL">
+  <meta name="twitter:description" content="A Cost-Efficient Tool for Long-Form Factuality Evaluation">
+  <!-- Path to banner image, should be in the path listed below. Optimal dimenssions are 1200X600-->
+  <meta name="twitter:image" content="static/images/factowl_overview.png">
+  <meta name="twitter:card" content="A Cost-Efficient Tool for Long-Form Factuality Evaluation">
+  <!-- Keywords for your paper to be indexed by-->
+  <meta name="keywords" content="Factuality, Evaluation, LLM, NLP, Fact-checking">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+  <title>FactOWL</title>
+  <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+  rel="stylesheet">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+  href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script src="https://documentcloud.adobe.com/view-sdk/main.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script src="static/js/bulma-carousel.min.js"></script>
+  <script src="static/js/bulma-slider.min.js"></script>
+  <script src="static/js/index.js"></script>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    .table-container {
+           width: 80%; /* Adjust as needed */
+           margin: auto;
+           overflow-x: auto; /* Makes the table scrollable horizontally if it overflows */
+       }
+   
+       table {
+           width: 100%;
+           border-collapse: collapse;
+       }
+   
+       th, td {
+           border: 1px solid #ddd; /* Light grey border */
+           padding: 8px;
+           text-align: left;
+       }
+   
+       th {
+           background-color: #f2f2f2; /* Light grey background for headers */
+       }
+       tr:nth-child(even) {background-color: #f9f9f9;} /* Zebra striping */
+        .highlight-grey {
+           background-color: #f0f0f0; /* Light grey */
+       }
+       .image-container-2 {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    width: 900px;
+    margin: 0 auto;
+  }
+
+  .image-container-2 img {
+    width: 100%;
+    height: auto;
+  }
+
+  .image-container-2 h2 {
+    margin-top: 10px;
+    width: 100%;
+  }
+  .image-row {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap; /* Added to handle wrapping on smaller screens */
+  }
+
+  .image-container {
+    flex: 1;
+    margin: 0 10px;
+    text-align: center;
+    width: calc(50% - 20px); /* Adjust width for two columns with margins */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    min-width: 400px; /* Ensure images don't get too small */
+  }
+
+
+  .image-container img {
+    width: 100%;
+    height: auto;
+    /* max-height: 500px;  Removed max-height to allow images to scale */
+  }
+  @media (max-width: 768px) { /* Adjust breakpoint as needed */
+    .image-container {
+      width: 100%; /* Full width on smaller screens */
+      margin: 10px 0; /* Adjust margins for smaller screens */
+    }
+  }
+   </style>
+</head>
+<body>
+
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+            <h1 class="title is-1 publication-title">FactOWL: A Cost-Efficient Tool for Long-Form Factuality Evaluation</h1>
+            <div class="is-size-5 publication-authors">
+              <!-- Paper authors -->
+              <span class="author-block">
+                <a href="mailto:andrey.sakhovskiy@gmail.com" target="_blank">Andrey Sakhovskiy</a><sup>1,2</sup>,
+              </span>
+              <span class="author-block">
+                Maria Marina<sup>3,2</sup>,
+              </span>
+              <span class="author-block">
+                Nikita Sushko<sup>3,2</sup>,
+              </span>
+              <span class="author-block">
+                Elena Tutubalina<sup>1,3,4</sup>,
+              </span>
+              <span class="author-block">
+                Alexander Panchenko<sup>2,3</sup>,
+              </span>
+              <span class="author-block">
+                Pavel Braslavski<sup>2,4</sup>
+              </span>
+            </div>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block"><sup>1</sup>Sber AI, <sup>2</sup>Skoltech, <sup>3</sup>AIRI, <sup>4</sup>HSE University<br>EMNLP 2025 Demo</span>
+            </div>
+
+            <div class="column has-text-centered">
+              <div class="publication-links">
+                <!-- Arxiv PDF link -->
+                <span class="link-block">
+                  <a href="https://raw.githubusercontent.com/s-nlp/factowl/refs/heads/landing-page/static/pdfs/FactOWL.pdf" target="_blank"
+                  class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <i class="ai ai-arxiv"></i>
+                  </span>
+                  <span>Paper</span>
+                </a>
+                </span>
+
+                <!-- Github link -->
+                <span class="link-block">
+                  <a href="https://github.com/s-nlp/factowl" target="_blank"
+                  class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <i class="fab fa-github"></i>
+                  </span>
+                  <span>Code</span>
+                </a>
+                </span>
+
+                <!-- PyPI link -->
+                <span class="link-block">
+                  <a href="https://pypi.org/project/factowl/" target="_blank"
+                  class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <i class="fab fa-python"></i>
+                  </span>
+                  <span>PyPI</span>
+                </a>
+                </span>
+
+              </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="hero is-small">
+  <div class="hero-body">
+    <div class="container">
+      <div class="image-row">
+        <div class="image-container-2">
+          <img src="static/images/factowl_overview.png" alt="FactOWL Overview">
+          <h2 class="subtitle has-text-centered">
+            FactOWL is a cost-efficient tool for evaluating the factuality of long-form LLM responses.
+          </h2>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Paper abstract -->
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+          <p>
+            Recent years have seen increasing interest in assessing the factuality of Large Language Models' (LLMs) long-form generations, driven by a severe problem of factual hallucinations. A prominent approach to this challenge is the extract-then-verify framework, which decomposes long-form responses into a set of atomic facts and verifies each using external evidence. Among these methods, FActScore stands out as a foundational and widely adopted. However, the research still lacks a unified open-access, up-to-date and cost-effective factuality evaluation tool since FActScore relies on outdated Wikipedia dump and proprietary LLMs available via paid API. To fill this gap, we propose <strong>FactOWL</strong>, a FActScore-based <strong>Fact</strong>uality evaluation tool which adopts an <strong>O</strong>pen LLM and real-time <strong>W</strong>ikipedia search for evaluation of <strong>L</strong>ong-form LLM responses. The proposed tool effectively addresses the problems of obsolete knowledge, incomplete contexts, and entity ambiguity by performing multi-page context aggregation and supporting additional sources, e.g., passages generated from Wikidata triples while showing about a 10x speed-up compared to FActScore. Experiments on FActScore's manually annotated data indicates that FactOWL's scores are close to human-judged factuality scores. Our tool is freely available at: <a href="https://github.com/s-nlp/factowl">https://github.com/s-nlp/factowl</a> under the MIT license and can be installed via <i>pip install factowl</i>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="hero is-small">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+        <h2 class="title is-3 has-text-centered">FactOWL vs. FactScore</h2>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>FactScore</th>
+                        <th>FactOWL</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Fact Extraction</td>
+                        <td style="color: #D22B2B;"><b>(closed-weights, deprecated)</b> InstructGPT</td>
+                        <td style="color: #228B22;"><b>(open-weights)</b> LLaMA-3-8B-Instruct</td>
+                    </tr>
+                    <tr>
+                        <td>Verification Model</td>
+                        <td style="color: #D22B2B;"><b>Old</b> LLaMA-1-ins</td>
+                        <td style="color: #228B22;"><b>New</b> LLaMA-3-8B-Instruct</td>
+                    </tr>
+                    <tr>
+                        <td>Knowledge Source</td>
+                        <td style="color: #D22B2B;"><b>Static</b> Wikipedia dump (2023)</td>
+                        <td style="color: #228B22;"><b>Live</b> Wikipedia API + optional Wikidata</td>
+                    </tr>
+                    <tr>
+                        <td>Entity Disambiguation</td>
+                        <td style="color: #D22B2B;"><b>One-to-one</b> Wikipedia page lookup</td>
+                        <td style="color: #228B22;"><b>Multi-page</b> retrieval + reranking</td>
+                    </tr>
+                    <tr>
+                        <td>Pipeline Complexity</td>
+                        <td style="color: #D22B2B;"><b>Slow</b>, Multi-model</td>
+                        <td style="color: #228B22;"><b>Fast</b>, Unified model, with vLLM</td>
+                    </tr>
+                    <tr>
+                        <td>Cost</td>
+                        <td style="color: #D22B2B;"><b>Paid, Proprietary</b> APIs (InstructGPT)</td>
+                        <td style="color: #228B22;"><b>Free, Open-Access</b></td>
+                    </tr>
+                    <tr>
+                        <td>Context Aggregation</td>
+                        <td style="color: #D22B2B;"><b>Single-page</b> top-k paragraphs</td>
+                        <td style="color: #228B22;"><b>Multi-page</b>, multi-passage aggregation</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <h2 class="subtitle has-text-centered" style="margin-top: 1rem;">
+            Comparison of FactScore and FactOWL, highlighting FactOWL's advantages.
+        </h2>
+    </div>
+  </div>
+</section>
+
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Methodology</h2>
+        <div class="content has-text-justified">
+          <p>
+            FactOWL decomposes the factual precision evaluation into two steps: (i) Splitting an input long-form generation into a set of short <i>atomic facts</i> followed by (ii) fact verification. It uses a single open-source Llama-3-8B-Instruct model for both fact generation and verification, replacing a two-model pipeline that relied on proprietary and older models. This simplifies the process and, combined with vLLM integration, significantly speeds up inference.
+          </p>
+          <p>
+            A key innovation in FactOWL is its handling of knowledge sources. While compatible with static Wikipedia dumps, it primarily uses a live Wikipedia search API to address outdated information. It retrieves multiple pages for a given topic, tackling entity ambiguity by aggregating content from several relevant sources. This multi-page context aggregation is a significant improvement over single-page lookup methods. Furthermore, FactOWL can incorporate additional knowledge from external sources like Wikidata.
+          </p>
+          <div class="table-container" style="margin-top: 2rem; margin-bottom: 1rem; width: 100%">
+            <table>
+              <thead>
+                <tr>
+                  <th>Topic</th>
+                  <th>LLM Generation</th>
+                  <th>Wikipedia search</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>William Post</td>
+                  <td>William Post (1949-1986) was an American lottery winner who won $16.2 million in the Pennsylvania Lottery in 1988...</td>
+                  <td>
+                    1. [C. W. Post] Charles William Post (October 26, 1854 – May 9, 1914) was an American innovator, breakfast cereal and ... <br>
+                    2. [William Post (businessman)] William Post (June 27, 1927 – February 10, 2024) was an American businessman and inventor ... <br>
+                    3. <b>[William Post (lottery winner)]</b> William "Bud" Post III (April 5, 1939 – January 15, 2006) was the winner of a Pennsylvania Lottery jackpot worth $16.2 million...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <h2 class="subtitle has-text-centered is-6">
+            Wikipedia search example for William Post entity from FActScore dataset. The ground truth page is highlighted in <b>bold</b>.
+          </h2>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="hero is-small">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <h2 class="title is-3 has-text-centered">Results</h2>
+      <div class="content has-text-justified">
+        <p>
+          FactOWL's automatic factual precision scores are close to human evaluation for InstructGPT and ChatGPT. While FactOWL shows a smaller gap to human evaluation than the original FActScore on end-to-end evaluation, the gap increases for PerplexityAI generations. More supporting evidence from multiple pages or Wikidata consistently improves precision scores.
+        </p>
+      </div>
+      <div class="image-row" style="margin-top: 2rem; margin-bottom: 1rem;">
+        <div class="image-container">
+          <img src="static/images/factowl_passages.png" alt="Entity-level comparison of FactOWL to FActScore's manual precision.">
+          <h2 class="subtitle has-text-centered is-6">Entity-level comparison of FactOWL to FActScore's manual precision. Larger context consistently increases the precision score.</h2>
+        </div>
+        <div class="image-container">
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Statistics</th>
+                  <th>InstGPT</th>
+                  <th>ChatGPT</th>
+                  <th>PPLAI</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td colspan="4" style="text-align:center; background-color: #f2f2f2;"><b>FActScore</b></td></tr>
+                <tr>
+                  <td>Avg. facts per response</td>
+                  <td>26</td>
+                  <td>34.6</td>
+                  <td>35.46</td>
+                </tr>
+                <tr>
+                  <td>Inference time</td>
+                  <td>~2h</td>
+                  <td>~2h 10m</td>
+                  <td>~2h 30m</td>
+                </tr>
+                <tr><td colspan="4" style="text-align:center; background-color: #f2f2f2;"><b>FactOWL</b></td></tr>
+                <tr>
+                  <td>Avg. facts per response</td>
+                  <td>20.6</td>
+                  <td>31.8</td>
+                  <td>38.6</td>
+                </tr>
+                <tr>
+                  <td>Inference time</td>
+                  <td>24m 30s</td>
+                  <td>24m 6s</td>
+                  <td>27m 36s</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <h2 class="subtitle has-text-centered is-6" style="margin-top: 1rem;">FactOWL extracts a comparable number of facts while being about 6x faster.</h2>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Evaluation</h2>
+        <div class="content has-text-justified">
+         <p>
+             FactOWL's factual Precision (<b>P</b>) scores on InstructGPT, ChatGPT, and PerplexityAI generations, evaluated against human annotations from FActScore. Results include (i) entity-averaged end-to-end fact generation and verification metrics, and (ii) atomic fact-level metrics based on FActScore's extracted facts. Error Rate (<b>ER</b>) denotes the difference compared to manual evaluation.
+         </p>
+            <div class="table-container", style="width: 100%">
+                <table>
+                    <thead>
+                        <tr>
+                            <th rowspan="2">Model</th>
+                            <th colspan="2">InstructGPT</th>
+                            <th colspan="2">ChatGPT</th>
+                            <th colspan="2">PerplexityAI</th>
+                        </tr>
+                        <tr>
+                            <th>P</th>
+                            <th>ER</th>
+                            <th>P</th>
+                            <th>ER</th>
+                            <th>P</th>
+                            <th>ER</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="7" style="text-align:center; background-color: #f2f2f2;"><b>Entity-level end-to-end Fact Generation & Verification</b></td></tr>
+                        <tr>
+                            <td><b>Human evaluation</b></td>
+                            <td>42.5</td>
+                            <td>---</td>
+                            <td>58.3</td>
+                            <td>---</td>
+                            <td>71.5</td>
+                            <td>---</td>
+                        </tr>
+                        <tr>
+                            <td>Original FActScore</td>
+                            <td>41.1</td>
+                            <td>1.4</td>
+                            <td>58.7</td>
+                            <td>0.4</td>
+                            <td>71.6</td>
+                            <td>0.1</td>
+                        </tr>
+                        <tr>
+                            <td>FactOWL, Llama-inst, 1 page, Wikipedia dump</td>
+                            <td>45.4</td>
+                            <td>2.9</td>
+                            <td>58.9</td>
+                            <td>0.6</td>
+                            <td>58.5</td>
+                            <td>13</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left;">FactOWL, Llama-3-8b-inst+Llama-1, 1 page, Wikipedia dump</td>
+                            <td>43.7</td>
+                            <td>1.2</td>
+                            <td>53.7</td>
+                            <td>4.6</td>
+                            <td>58.4</td>
+                            <td>13.1</td>
+                        </tr>
+                        <tr>
+                            <td>FactOWL (1 page, 2023 Wikipedia dump)</td>
+                            <td>43.6</td>
+                            <td>1.1</td>
+                            <td>59.4</td>
+                            <td>1.1</td>
+                            <td>64.1</td>
+                            <td>7.4</td>
+                        </tr>
+                        <tr>
+                            <td>FactOWL (1 page, 5 passages)</td>
+                            <td>40.8</td>
+                            <td>1.7</td>
+                            <td>56.4</td>
+                            <td>1.9</td>
+                            <td>62.2</td>
+                            <td>9.3</td>
+                        </tr>
+                        <tr>
+                            <td>FactOWL (5 pages, 10 passages)</td>
+                            <td>43.0</td>
+                            <td>0.5</td>
+                            <td>58.4</td>
+                            <td>0.1</td>
+                            <td>67.9</td>
+                            <td>3.6</td>
+                        </tr>
+                        <tr>
+                            <td>FactOWL (5 pages + Wikidata)</td>
+                            <td>44.0</td>
+                            <td>1.5</td>
+                            <td>60.7</td>
+                            <td>2.7</td>
+                            <td>66.8</td>
+                            <td>4.7</td>
+                        </tr>
+                        <tr><td colspan="7" style="text-align:center; background-color: #f2f2f2;"><b>Claim-level Atomic Fact Verification</b></td></tr>
+                        <tr>
+                            <td><b>Human evaluation</b></td>
+                            <td>44.4</td>
+                            <td>---</td>
+                            <td>58.9</td>
+                            <td>---</td>
+                            <td>81.7</td>
+                            <td>---</td>
+                        </tr>
+                        <tr>
+                            <td>FactOWL (1 page, 5 passages, 2023 Wikipedia dump)</td>
+                            <td>46.1</td>
+                            <td>1.7</td>
+                            <td>62.5</td>
+                            <td>3.6</td>
+                            <td>72.6</td>
+                            <td>9.1</td>
+                        </tr>
+                        <tr>
+                            <td>FactOWL (1 page, 5 passages)</td>
+                            <td>43.7</td>
+                            <td>0.7</td>
+                            <td>57.9</td>
+                            <td>1.0</td>
+                            <td>71.3</td>
+                            <td>10.4</td>
+                        </tr>
+                        <tr>
+                            <td>FactOWL (5 pages, 10 passages)</td>
+                            <td>46.8</td>
+                            <td>0.4</td>
+                            <td>61.9</td>
+                            <td>3.0</td>
+                            <td>74.8</td>
+                            <td>6.9</td>
+                        </tr>
+                        <tr>
+                            <td>FactOWL (5 pages + Wikidata)</td>
+                            <td>48.1</td>
+                            <td>3.7</td>
+                            <td>62.8</td>
+                            <td>3.9</td>
+                            <td>74.8</td>
+                            <td>6.9</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!--BibTex citation -->
+<section class="section" id="BibTeX">
+  <div class="container is-max-desktop content is-light">
+    <h2 class="title">BibTeX</h2>
+        <pre><code>TBD</code></pre>
+  </div>
+</section>
+<!--End BibTex citation -->  
+
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+
+          <p>
+            This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page.
+            You are free to borrow the source code of this website, we just ask that you link back to this page in the footer. <br> This website is licensed under a <a rel="license"  href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative
+            Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Statcounter tracking code -->
+  
+<!-- You can add a tracker to track page visits by creating an account at statcounter.com -->
+
+    <!-- End of Statcounter Code -->
+
+  </body>
+  </html>
