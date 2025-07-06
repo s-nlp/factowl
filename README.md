@@ -1,5 +1,7 @@
 # FactOwl: Blazingly fast and modern factchecker
 
+See more on [https://s-nlp.github.io/factowl/](https://s-nlp.github.io/factowl/)
+
 ## Installation
 
 ### For development:
