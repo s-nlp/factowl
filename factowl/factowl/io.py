@@ -5,6 +5,11 @@ import pandas as pd
 from nltk import sent_tokenize
 
 
+def load_simple_json(p):
+    df = pd.read_json(p)
+    return df.topics.to_list(), df.generations.to_list()
+
+
 def load_json_generations(p):
     topics = []
     gens = []
