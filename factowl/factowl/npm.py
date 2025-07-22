@@ -24,7 +24,7 @@ class NPM(LM):
         self.tokenizer = AutoTokenizer.from_pretrained("facebook/" + self.model_name)
         self.mask_id = self.tokenizer.mask_token_id
 
-        with open("roberta_stopwords.txt", "r") as f:
+        with open("data/roberta_stopwords.txt", "r") as f:
             self.stopwords = set()
             for line in f:
                 self.stopwords.add(int(line.strip()))

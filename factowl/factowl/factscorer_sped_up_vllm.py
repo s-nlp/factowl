@@ -133,7 +133,7 @@ class FactScorerSpedUpVLLM(object):
                   gamma=10,
                   all_atomic_facts=None,
                   knowledge_source=None,
-                  verbose=False):
+                  verbose=True):
         if all_atomic_facts is not None:
             assert len(topics) == len(all_atomic_facts), "`topics` and `atomic_facts` should have the same length"
         else:

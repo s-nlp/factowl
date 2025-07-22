@@ -1,5 +1,4 @@
 [build-system]
-# Minimum versions that understand PEP-621 and setuptools-scm
 requires = [
   "setuptools>=69",
   "setuptools-scm[toml]>=8",
@@ -9,8 +8,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "factowl"
-# The version is taken from your Git tags (setuptools-scm)
-version = "0.2.2"
+
+version = "0.2.3"
 description = "Tools for fact extraction, scoring and LLM evaluation (FactOwl)"
 readme = "README.md"
 authors = [
@@ -19,8 +18,6 @@ authors = [
 license = {file = "LICENSE"}
 requires-python = ">=3.9"
 
-# Only **runtime** dependencies go here.
-# Keep the list small—extras can pull in heavier stacks (see below).
 dependencies = [
   "nltk==3.9.1",
   "openai==1.88.0",
@@ -43,11 +40,10 @@ Documentation = "https://github.com/s-nlp/factowl#readme"
 Source = "https://github.com/s-nlp/factowl"
 Issues = "https://github.com/s-nlp/factowl/issues"
 
-[tool.setuptools]                 # ← delete package-dir
+[tool.setuptools]                 
 [tool.setuptools.packages.find]
 where   = ["."]
 include = ["factowl*"]
 
 [tool.setuptools_scm]
-# No config needed unless you want custom tag prefixes; default is fine.
 
