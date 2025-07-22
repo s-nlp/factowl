@@ -9,7 +9,6 @@ def load_simple_json(p):
     df = pd.read_json(p)
     return df.topics.to_list(), df.generations.to_list()
 
-
 def load_json_generations(p):
     topics = []
     gens = []
@@ -60,7 +59,9 @@ def save_predictions(eval_dict, save_path):
             "topic": fact_dict["topic"],
             "atom": fact_dict["atom"],
             "is_supported": fact_dict["is_supported"],
-            "label": label
+            "label": label,
+            "context": json.dumps(fact_dict.get("context", []), ensure_ascii=False),
+            "num_context_passages": len(fact_dict.get("context", []))
         }
         samples.append(d)
         if atom not in seen_atoms:

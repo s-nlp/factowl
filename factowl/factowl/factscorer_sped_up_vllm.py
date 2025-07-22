@@ -125,7 +125,8 @@ class FactScorerSpedUpVLLM(object):
                              "npm-single",
                              cache_file=cache_file,
                              device=self.retrieval_device,
-                             context_type=self.cxt_type)
+                             context_type=self.cxt_type,
+                             data_dir=self.data_dir)
         
     def get_score(self,
                   topics,
@@ -133,7 +134,7 @@ class FactScorerSpedUpVLLM(object):
                   gamma=10,
                   all_atomic_facts=None,
                   knowledge_source=None,
-                  verbose=False):
+                  verbose=True):
         if all_atomic_facts is not None:
             assert len(topics) == len(all_atomic_facts), "`topics` and `atomic_facts` should have the same length"
         else:

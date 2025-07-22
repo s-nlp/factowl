@@ -1,4 +1,4 @@
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 
 from .factscorer_sped_up_vllm import FactScorerSpedUpVLLM
 from .atomic_facts_sped_up_vllm import AtomicFactGeneratorSpedUpVLLM, VLLMGenerator

@@ -12,7 +12,7 @@ def softmax(x):
 
 class NPM(LM):
 
-    def __init__(self, bm25, model_name, cache_file, device, context_type):
+    def __init__(self, bm25, model_name, cache_file, device, context_type, data_dir):
         assert model_name.startswith("npm")
         assert context_type in ("db", "wikipedia_api")
         self.bm25 = bm25
@@ -24,7 +24,7 @@ class NPM(LM):
         self.tokenizer = AutoTokenizer.from_pretrained("facebook/" + self.model_name)
         self.mask_id = self.tokenizer.mask_token_id
 
-        with open("roberta_stopwords.txt", "r") as f:
+        with open(f"{data_dir}/roberta_stopwords.txt", "r") as f:
             self.stopwords = set()
             for line in f:
                 self.stopwords.add(int(line.strip()))
