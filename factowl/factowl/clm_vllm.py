@@ -18,6 +18,20 @@ DEFAULT_VERIFICATION_SYSTEM_PROMPT = "You are an expert fact extraction and veri
                                      "4. Do not include any additional information and explanations, you must only answer 'True' or 'False'."
 
 
+MULTIFACT_VERIFICATION_SYSTEM_PROMPT = "You are an expert fact verification assistant. You are given:\n" \
+    "1. The full text of a Wikipedia page on a relevant topic.\n"  \
+    "2. An enumerated list of atomic facts (N facts), each on a new line.\n\n"  \
+    "Your task is to determine whether each fact is supported or refuted by the Wikipedia page.\n\n"  \
+    "Instructions:\n"  \
+    "1. Check if any part of the provided Wikipedia page directly supports the fact.\n"  \
+    "2. Output 'True' if at least one part of the page supports the fact, even if other parts contradict it.\n"  \
+    "3. Output 'False' if no part of the page supports the fact.\n"  \
+    "4. For each fact, you must output exactly a single line with the fact's integer identifier and True/False atomic fact label. The line format is as follows:\n"  \
+    "[fact_id]. [True/False]\n"  \
+    "where [fact_id] is the integer identifier from the input list.\n"  \
+    "5. Do not include any additional explanations, comments, or formatting."
+
+
 DEFAULT_FACT_VERIFICATION_QUERY_TEMPLATE = """
 Passages:
 <passages>
@@ -31,6 +45,28 @@ Passages:
 Atomic Fact's topic/topics: <fact_topic>
 Atomic Fact: <atomic_fact>
 True or False? 
+"""
+
+MULTIFACT_VERIFICATION_QUERY_TEMPLATE = """
+Wikipedia page:
+<page_content>
+
+
+Atomic Facts:
+<atomic_facts>
+
+Atomic fact labels:
+"""
+
+MULTIFACT_VERIFICATION_QUERY_TEMPLATE_WITH_TOPIC = """
+Wikipedia page (Page topic: <page_topic>):
+<page_content>
+
+
+Atomic Facts:
+<atomic_facts>
+
+Atomic fact labels:
 """
 
 
@@ -61,7 +97,7 @@ class FactVerificatorSpedUpVLLM(object):
             stop=[self.tokenizer.eos_token]
         )
 
-    def create_messages(self, query, passages, topic=None):
+    def create_messages_single_fact(self, query, passages, topic=None):
         assert self.system_prompt is not None
         assert self.query_prompt_template is not None
 
@@ -93,6 +129,35 @@ class FactVerificatorSpedUpVLLM(object):
         ]
 
         return messages
+
+    def create_messages_multi_fact(self, atomic_facts, context_page, topic=None):
+        assert self.system_prompt is not None
+        assert self.query_prompt_template is not None
+
+        if topic is not None:
+            query_prompt = MULTIFACT_VERIFICATION_QUERY_TEMPLATE_WITH_TOPIC
+            if isinstance(topic, list):
+                topic_s = ','.join(sorted(topic))
+            elif isinstance(topic, str):
+                topic_s = topic
+            else:
+                raise ValueError(f"Unsupported topic type {type(topic)} for {topic}")
+            query_prompt = query_prompt.replace("<page_topic>", topic_s)
+
+        else:
+            query_prompt = MULTIFACT_VERIFICATION_QUERY_TEMPLATE
+            # query_prompt = query_prompt_template.replace('<atomic_fact>', query)
+        query_prompt = query_prompt.replace("<page_content>", context_page)
+        afs_str = ''.join((f"{i}. {x}\n" for i, x in enumerate(atomic_facts)))
+        query_prompt = query_prompt.replace("<atomic_facts>", f"{afs_str}")
+
+        messages = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": query_prompt}
+        ]
+
+        return messages
+
 
     def generate(self, prompts):
         return self.vllm.generate(prompts)

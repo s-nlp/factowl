@@ -34,7 +34,8 @@ class FactScorerSpedUpVLLM(object):
                  n_npm_contexts: int = 3,
                  num_supporting_contexts: int = 10,
                  precomputed_passages=None,
-                 concat_topic=False
+                 concat_topic=False,
+                 multifact_verification: bool = False
                  ):
         assert model_name in ["retrieval+llama", "retrieval+llama+npm", "retrieval+ChatGPT", "npm",
                               "retrieval+ChatGPT+npm"]
@@ -94,6 +95,7 @@ class FactScorerSpedUpVLLM(object):
         if self.precomputed_passages is not None:
             self.extr_ps = '-extra'
         self.concat_topic = concat_topic
+        self.multifact_verification = multifact_verification
         # self.torch_compile = torch_compile
 
     def register_knowledge_source(self, name="enwiki-20240401", db_path=None, data_path=None):
@@ -129,7 +131,7 @@ class FactScorerSpedUpVLLM(object):
                                  device=self.retrieval_device,
                                  context_type=self.cxt_type,
                                  data_dir=self.data_dir)
-        
+
     def get_score(self,
                   topics,
                   generations,
@@ -263,22 +265,77 @@ class FactScorerSpedUpVLLM(object):
                            knowledge_source):
         assert len(batch_topic_labels) == len(batch_atomic_facts)
         old_len = len(all_decisions)
-        for t, afs in tqdm(zip(batch_topic_labels, batch_atomic_facts), total=min(len(batch_topic_labels), len(batch_atomic_facts))):
-            if afs is None or len(afs) == 0:
-                topic_decisions = [{"topic": t, "atom": None, "is_supported": False}, ]
-            else:
-                topic_decisions = self._get_score_vllm(topic=t, atomic_facts=afs,
-                                                       knowledge_source=knowledge_source)
-            all_decisions.append(topic_decisions)
+        if self.multifact_verification:
+            batch_decisions = self._get_score_vllm_batched(batch_topics=batch_topic_labels,
+                                                           batch_atomic_facts=batch_atomic_facts,
+                                                           knowledge_source=knowledge_source)
+            all_decisions.extend(batch_decisions)
+
+        else:
+            for t, afs in tqdm(zip(batch_topic_labels, batch_atomic_facts),
+                               total=min(len(batch_topic_labels), len(batch_atomic_facts))):
+                if afs is None or len(afs) == 0:
+                    topic_decisions = [{"topic": t, "atom": None, "is_supported": False}, ]
+                else:
+
+                    topic_decisions = self._get_score_vllm_unbatched(topic=t, atomic_facts=afs,
+                                                                     knowledge_source=knowledge_source)
+                all_decisions.append(topic_decisions)
         new_len = len(all_decisions)
         try:
             assert new_len - old_len == len(batch_atomic_facts)
         except AssertionError:
-            logging.warning(f'Some of the generations were not checked: {new_len=}, {old_len=}')
+            logging.warning(f'Some of the generations were not checked: {new_len}, {old_len}')
         batch_atomic_facts.clear()
         batch_topic_labels.clear()
 
-    def _get_score_vllm(self, topic, atomic_facts, knowledge_source):
+    def _get_score_vllm_batched(self, batch_topics, batch_atomic_facts, knowledge_source):
+        batch_decisions = []
+        total_words = 0
+        # prompts = []
+        batch_contexts = [self.retrieval[knowledge_source].get_full_page_content(t) for t in batch_topics]
+        if self.concat_topic:
+            prompt_topics = batch_topics
+        else:
+            prompt_topics = [None, ] * len(batch_topics)
+
+        prompts = [self.vllm_verifier.create_messages_multi_fact(atomic_facts=x, context_page=y, topic=t) \
+                   for x, y, t in zip(batch_atomic_facts, batch_contexts, prompt_topics)]
+        prompts = [
+            self.vllm_verifier.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            for messages in prompts
+        ]
+        outputs = self.vllm_verifier.generate(prompts)
+
+        gen_texts = [o.outputs[0].text for o in outputs]
+        assert len(gen_texts) == len(batch_atomic_facts) == len(batch_topics)
+        if self.debug:
+            logging.info("Verifying atomic facts....")
+            logging.info(f"Verification prompt (first): {prompts[0]}")
+            logging.info(f"Verification prompt (last): {prompts[-1]}")
+
+        for t, gen, afs in zip(batch_topics, gen_texts, batch_atomic_facts):
+            lines = gen.strip().split('\n')
+            gen_labels = [False, ] * len(afs)
+            for line in lines:
+                fact_id = int(line.strip().split('.')[0])
+                if line.strip().lower().endswith("true"):
+                    gen_labels[fact_id] = True
+                if "true" in line.strip().lower():
+                    gen_labels[fact_id] = True
+            decisions = [{"topic": t, "atom": fact, "is_supported": label} for fact, label in zip(afs, gen_labels)]
+            batch_decisions.append(decisions)
+
+        if self.debug:
+            logging.info("Verifying atomic facts....")
+            for dec_d in batch_decisions[0]:
+                logging.info(f"{dec_d['atom']} - {dec_d['is_supported']}")
+            for dec_d in batch_decisions[-1]:
+                logging.info(f"{dec_d['atom']} - {dec_d['is_supported']}")
+
+        return batch_decisions
+
+    def _get_score_vllm_unbatched(self, topic, atomic_facts, knowledge_source):
         decisions = []
         total_words = 0
         prompts = []
@@ -286,15 +343,7 @@ class FactScorerSpedUpVLLM(object):
         for atom in atomic_facts:
             atom = atom.strip()
             passages = self.retrieval[knowledge_source].get_passages(topic, atom, k=self.n_support_cxt)
-            # if isinstance(topic, str):
-            #     passages = self.retrieval[knowledge_source].get_passages(topic, atom, k=self.n_support_cxt)
-            # elif isinstance(topic, list):
-            #     passages = []
-            #     for t in topic:
-            #         psgs = self.retrieval[knowledge_source].get_passages(t, atom, k=self.n_support_cxt)
-            #         passages.extend(psgs)
-            # else:
-            #     raise RuntimeError(f"Unsupported topic type: {type(topic)} for topic {topic}")
+
             if self.precomputed_passages is not None:
                 extra_psgs = self.precomputed_passages.get(topic)
                 if extra_psgs is not None:
@@ -303,9 +352,10 @@ class FactScorerSpedUpVLLM(object):
                 logging.info(f"FACT EVALUATION CONTEXT PASSAGES:\n{passages}\n--")
 
             if self.concat_topic:
-                verification_prompt = self.vllm_verifier.create_messages(query=atom, passages=passages, topic=topic)
+                verification_prompt = self.vllm_verifier.create_messages_single_fact(query=atom, passages=passages,
+                                                                                     topic=topic)
             else:
-                verification_prompt = self.vllm_verifier.create_messages(query=atom, passages=passages, )
+                verification_prompt = self.vllm_verifier.create_messages_single_fact(query=atom, passages=passages, )
             prompts.append(verification_prompt)
 
         prompts = [
@@ -372,4 +422,3 @@ def calculate_score_from_decisions(all_atomic_facts, decisions, gamma):
         out["init_score"] = np.mean(init_scores)
 
     return out
-
