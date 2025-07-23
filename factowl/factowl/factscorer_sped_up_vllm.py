@@ -118,14 +118,17 @@ class FactScorerSpedUpVLLM(object):
                                          context_num_pages=self.cxt_n_pages)
         cache_file = os.path.join(self.cache_dir,
                                   f"npm-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}.pkl")
-        self.npm[name] = NPM(Retrieval(self.db[name], cache_path, embed_cache_path, self.npm_retrieval_type,
-                                       device=self.retrieval_device, context_type=self.cxt_type,
-                                       page_search_mode=self.page_search_mode,
-                                       context_num_pages=self.cxt_n_pages),
-                             "npm-single",
-                             cache_file=cache_file,
-                             device=self.retrieval_device,
-                             context_type=self.cxt_type)
+        self.npm[name] = None
+        if "npm" in self.model_name:
+            self.npm[name] = NPM(Retrieval(self.db[name], cache_path, embed_cache_path, self.npm_retrieval_type,
+                                           device=self.retrieval_device, context_type=self.cxt_type,
+                                           page_search_mode=self.page_search_mode,
+                                           context_num_pages=self.cxt_n_pages),
+                                 "npm-single",
+                                 cache_file=cache_file,
+                                 device=self.retrieval_device,
+                                 context_type=self.cxt_type,
+                                 data_dir=self.data_dir)
         
     def get_score(self,
                   topics,

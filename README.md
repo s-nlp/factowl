@@ -28,7 +28,7 @@ pip install factowl
 To run the scorer on the provided sample dataset, simply use:
 
 ```
-python cli.py --input_file data/sample_input.json
+python -m factowl --input_file data/sample_input.json
 ```
 
 You can also provide your own data into the script in the following format:
