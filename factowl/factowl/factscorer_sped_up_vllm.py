@@ -299,15 +299,30 @@ class FactScorerSpedUpVLLM(object):
         else:
             prompt_topics = [None, ] * len(batch_topics)
 
-        prompts = [self.vllm_verifier.create_messages_multi_fact(atomic_facts=x, context_page=y, topic=t) \
-                   for x, y, t in zip(batch_atomic_facts, batch_contexts, prompt_topics)]
+        # prompts = [self.vllm_verifier.create_messages_multi_fact(atomic_facts=x, context_page=y, topic=t) \
+        #            for x, y, t in zip(batch_atomic_facts, batch_contexts, prompt_topics)]
+        prompts = []
+        keep_indices = []
+        # TODO
+        for j, (x, y, t) in enumerate(zip(batch_atomic_facts, batch_contexts, prompt_topics)):
+            if x is not None:
+                p = self.vllm_verifier.create_messages_multi_fact(atomic_facts=x, context_page=y, topic=t)
+                prompts.append(p)
+                keep_indices.append(j)
+                # x = "This a placeholder "
+
         prompts = [
             self.vllm_verifier.tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
             for messages in prompts
         ]
         outputs = self.vllm_verifier.generate(prompts)
+        assert len(keep_indices) == len(outputs)
 
-        gen_texts = [o.outputs[0].text for o in outputs]
+        # gen_texts = [o.outputs[0].text for o in outputs]
+        gen_texts = [None, ] * len(outputs)
+        for j, o in zip(keep_indices, outputs):
+            gen_texts[j] = o
+
         assert len(gen_texts) == len(batch_atomic_facts) == len(batch_topics)
         if self.debug:
             logging.info("Verifying atomic facts....")
@@ -315,6 +330,12 @@ class FactScorerSpedUpVLLM(object):
             logging.info(f"Verification prompt (last): {prompts[-1]}")
 
         for t, gen, afs in zip(batch_topics, gen_texts, batch_atomic_facts):
+            assert (gen is None) == (afs is None)
+            if gen is None or len(afs) == 0:
+                decisions = [{"topic": t, "atom": None, "is_supported": False}, ]
+                batch_decisions.append(decisions)
+                continue
+
             lines = gen.strip().split('\n')
             gen_labels = [False, ] * len(afs)
             for line in lines:
