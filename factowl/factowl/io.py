@@ -45,12 +45,18 @@ def save_predictions(eval_dict, save_path):
     samples = []
     dedup_samples = []
     seen_atoms = set()
+    unique_topics = set()
+    unique_topics_w_atoms = set()
     for sample_id, fact_dict in enumerate(decisions):
         if fact_dict is None:
             continue
         seen_atoms.clear()
-        # for fact_dict in dec:
         atom = fact_dict["atom"]
+        t = fact_dict["topic"]
+        unique_topics.add(t)
+        if atom is not None:
+            unique_topics_w_atoms.add(t)
+
         sup = fact_dict["is_supported"]
         assert sup == np.True_ or sup == np.False_
         label = 1 if sup == np.True_ else 0
@@ -74,11 +80,10 @@ def save_predictions(eval_dict, save_path):
     num_facts = sum(len(x) for x in samples)
     num_dedup_facts = sum(len(x) for x in dedup_samples)
 
-    print(f"Mean num facts: {num_facts / len(decisions)}")
-    print(f"Mean unique num facts:  {num_dedup_facts / len(decisions)}")
+    print(f"Mean num facts in topics with at least 1 fact: {num_facts / len(unique_topics_w_atoms)}")
+    print(f"Mean num facts in topics (with fact-less topics): {num_facts / len(unique_topics)}")
 
     print(f"Mean score: {score}")
-    print(f"Mean deduplicated score: {dedup_score}")
     if eval_dict.get('init_score') is not None:
         print(f"init_score: {eval_dict['init_score']}")
 

@@ -174,13 +174,13 @@ class FactScorerSpedUpVLLM(object):
         for i, (topic, gen) in enumerate(zip(topics, generations)):
             # optionally, first detect if the response is abstained
             response_abstained = is_response_abstained(gen, self.abstain_detection_type)
-            if response_abstained:
-                all_atomic_facts.append(None)
-                batch_atomic_facts.append(None)
-                # all_decisions.append(None)
-                topic_labels.append(topic)
-                batch_topic_labels.append(topic)
-                continue
+            # if response_abstained:
+            #     all_atomic_facts.append(None)
+            #     batch_atomic_facts.append(None)
+            #     # all_decisions.append(None)
+            #     topic_labels.append(topic)
+            #     batch_topic_labels.append(topic)
+            #     continue
 
             # continue only when the response is not abstained
             curr_afs, _ = self.af_generator.run(gen)
@@ -193,7 +193,7 @@ class FactScorerSpedUpVLLM(object):
                 for af in curr_afs:
                     logging.info(f"\tAtomic fact: {af}")
 
-            if len(curr_afs) == 0:
+            if len(curr_afs) == 0 or response_abstained:
                 all_atomic_facts.append(None)
                 batch_atomic_facts.append(None)
                 topic_labels.append(topic)
@@ -204,7 +204,7 @@ class FactScorerSpedUpVLLM(object):
                 batch_atomic_facts.append(curr_afs)
                 batch_topic_labels.append(topic)
             # if i > 0 and i % self.dump_every_int == 0:
-            if len(batch_atomic_facts) > self.dump_every_int:
+            if len(batch_atomic_facts) >= self.dump_every_int:
                 self.batch_verify_facts(batch_topic_labels=batch_topic_labels,
                                         batch_atomic_facts=batch_atomic_facts,
                                         all_decisions=all_decisions,
@@ -275,7 +275,8 @@ class FactScorerSpedUpVLLM(object):
 
         else:
             for t, afs in tqdm(zip(batch_topic_labels, batch_atomic_facts),
-                               total=min(len(batch_topic_labels), len(batch_atomic_facts))):
+                               total=min(len(batch_topic_labels), len(batch_atomic_facts)),
+                               miniters=10):
                 if afs is None or len(afs) == 0:
                     topic_decisions = [{"topic": t, "atom": None, "is_supported": False}, ]
                 else:
