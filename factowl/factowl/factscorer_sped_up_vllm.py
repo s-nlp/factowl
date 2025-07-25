@@ -180,6 +180,7 @@ class FactScorerSpedUpVLLM(object):
                 # all_decisions.append(None)
                 topic_labels.append(topic)
                 batch_topic_labels.append(topic)
+                continue
 
             # continue only when the response is not abstained
             curr_afs, _ = self.af_generator.run(gen)
@@ -202,7 +203,8 @@ class FactScorerSpedUpVLLM(object):
                 topic_labels.append(topic)
                 batch_atomic_facts.append(curr_afs)
                 batch_topic_labels.append(topic)
-            if i > 0 and i % self.dump_every_int == 0:
+            # if i > 0 and i % self.dump_every_int == 0:
+            if len(batch_atomic_facts) > self.dump_every_int:
                 self.batch_verify_facts(batch_topic_labels=batch_topic_labels,
                                         batch_atomic_facts=batch_atomic_facts,
                                         all_decisions=all_decisions,
@@ -303,7 +305,6 @@ class FactScorerSpedUpVLLM(object):
         #            for x, y, t in zip(batch_atomic_facts, batch_contexts, prompt_topics)]
         prompts = []
         keep_indices = []
-        # TODO
         for j, (x, y, t) in enumerate(zip(batch_atomic_facts, batch_contexts, prompt_topics)):
             if x is not None:
                 p = self.vllm_verifier.create_messages_multi_fact(atomic_facts=x, context_page=y, topic=t)
@@ -319,10 +320,10 @@ class FactScorerSpedUpVLLM(object):
         assert len(keep_indices) == len(outputs)
 
         # gen_texts = [o.outputs[0].text for o in outputs]
-        gen_texts = [None, ] * len(outputs)
+        gen_texts = [None, ] * len(batch_atomic_facts)
         for j, o in zip(keep_indices, outputs):
-            gen_texts[j] = o
-
+            gen_texts[j] = o.outputs[0].text
+            
         assert len(gen_texts) == len(batch_atomic_facts) == len(batch_topics)
         if self.debug:
             logging.info("Verifying atomic facts....")
