@@ -130,7 +130,8 @@ class Retrieval(object):
         assert retrieval_type == "bm25" or retrieval_type.startswith("gtr-")
 
         self.encoder = None
-        self.load_cache()
+        # TODO: Temporarily removed
+        # self.load_cache()
         self.add_n = 0
         self.add_n_embed = 0
         self.device = device

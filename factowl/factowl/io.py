@@ -77,8 +77,8 @@ def save_predictions(eval_dict, save_path):
     score = sum(x["label"] for x in samples) / len(samples)
     dedup_score = sum(x["label"] for x in dedup_samples) / len(dedup_samples)
 
-    num_facts = sum(len(x) for x in samples)
-    num_dedup_facts = sum(len(x) for x in dedup_samples)
+    num_facts = len(samples) # sum(len(x) for x in samples)
+    # num_dedup_facts = sum(len(x) for x in dedup_samples)
 
     print(f"Mean num facts in topics with at least 1 fact: {num_facts / len(unique_topics_w_atoms)}")
     print(f"Mean num facts in topics (with fact-less topics): {num_facts / len(unique_topics)}")

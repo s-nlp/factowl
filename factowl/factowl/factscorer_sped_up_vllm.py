@@ -35,7 +35,8 @@ class FactScorerSpedUpVLLM(object):
                  num_supporting_contexts: int = 10,
                  precomputed_passages=None,
                  concat_topic=False,
-                 multifact_verification: bool = False
+                 multifact_verification: bool = False,
+                 verbose=False
                  ):
         assert model_name in ["retrieval+llama", "retrieval+llama+npm", "retrieval+ChatGPT", "npm",
                               "retrieval+ChatGPT+npm"]
@@ -96,6 +97,7 @@ class FactScorerSpedUpVLLM(object):
             self.extr_ps = '-extra'
         self.concat_topic = concat_topic
         self.multifact_verification = multifact_verification
+        self.verbose = verbose
         # self.torch_compile = torch_compile
 
     def register_knowledge_source(self, name="enwiki-20240401", db_path=None, data_path=None):
@@ -184,7 +186,7 @@ class FactScorerSpedUpVLLM(object):
 
             # continue only when the response is not abstained
             curr_afs, _ = self.af_generator.run(gen)
-            curr_afs = set([fact for _, facts in curr_afs for fact in facts])
+            curr_afs = list(dict.fromkeys(([fact for _, facts in curr_afs for fact in facts])))
 
             if self.debug:
                 logging.info(f"Topic: {topic}")
@@ -274,9 +276,13 @@ class FactScorerSpedUpVLLM(object):
             all_decisions.extend(batch_decisions)
 
         else:
-            for t, afs in tqdm(zip(batch_topic_labels, batch_atomic_facts),
-                               total=min(len(batch_topic_labels), len(batch_atomic_facts)),
-                               miniters=10):
+            if self.verbose:
+                it = tqdm(zip(batch_topic_labels, batch_atomic_facts),
+                     total=min(len(batch_topic_labels), len(batch_atomic_facts)),
+                     miniters=10)
+            else:
+                it = zip(batch_topic_labels, batch_atomic_facts),
+            for t, afs in it:
                 if afs is None or len(afs) == 0:
                     topic_decisions = [{"topic": t, "atom": None, "is_supported": False}, ]
                 else:
@@ -307,7 +313,7 @@ class FactScorerSpedUpVLLM(object):
         prompts = []
         keep_indices = []
         for j, (x, y, t) in enumerate(zip(batch_atomic_facts, batch_contexts, prompt_topics)):
-            if x is not None:
+            if x is not None and len(batch_atomic_facts) > 0:
                 p = self.vllm_verifier.create_messages_multi_fact(atomic_facts=x, context_page=y, topic=t)
                 prompts.append(p)
                 keep_indices.append(j)
@@ -330,6 +336,10 @@ class FactScorerSpedUpVLLM(object):
             logging.info("Verifying atomic facts....")
             logging.info(f"Verification prompt (first): {prompts[0]}")
             logging.info(f"Verification prompt (last): {prompts[-1]}")
+        if self.debug:
+            logging.info(f"Fact verification outputs: ")
+            for o in gen_texts[:3]:
+                logging.info(f"Verification output: {o}")
 
         for t, gen, afs in zip(batch_topics, gen_texts, batch_atomic_facts):
             assert (gen is None) == (afs is None)
@@ -341,11 +351,14 @@ class FactScorerSpedUpVLLM(object):
             lines = gen.strip().split('\n')
             gen_labels = [False, ] * len(afs)
             for line in lines:
-                fact_id = int(line.strip().split('.')[0])
+                try:
+                    fact_id = int(line.strip().split('.')[0])
+                except ValueError as e:
+                    continue
                 if line.strip().lower().endswith("true"):
                     gen_labels[fact_id] = True
-                if "true" in line.strip().lower():
-                    gen_labels[fact_id] = True
+                # if "true" in line.strip().lower():
+                #     gen_labels[fact_id] = True
             decisions = [{"topic": t, "atom": fact, "is_supported": label} for fact, label in zip(afs, gen_labels)]
             batch_decisions.append(decisions)
 
@@ -424,7 +437,7 @@ def calculate_score_from_decisions(all_atomic_facts, decisions, gamma):
     assert len(decisions) == len(all_atomic_facts)
     for decision, atomic_facts in zip(decisions, all_atomic_facts):
 
-        if atomic_facts is None:
+        if atomic_facts is None or decision["atom"] is None:
             continue
         score = np.mean([d["is_supported"] for d in decision])
         if gamma:
