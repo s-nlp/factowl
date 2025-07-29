@@ -132,6 +132,8 @@ class Retrieval(object):
         self.encoder = None
         # TODO: Temporarily removed
         # self.load_cache()
+        self.cache = {}
+        self.embed_cache = {}
         self.add_n = 0
         self.add_n_embed = 0
         self.device = device

@@ -451,7 +451,7 @@ def calculate_score_from_decisions(all_atomic_facts, decisions, gamma):
     assert len(decisions) == len(all_atomic_facts)
     for decision, atomic_facts in zip(decisions, all_atomic_facts):
 
-        if atomic_facts is None or decision["atom"] is None:
+        if atomic_facts is None or len(atomic_facts) == 0:
             continue
         score = np.mean([d["is_supported"] for d in decision])
         if gamma:
