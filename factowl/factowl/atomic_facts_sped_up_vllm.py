@@ -106,7 +106,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         all_paragraphs = []
         offsets = []
         for gen in generations:
-            gen_paras = [p.strip() for p in gen.split("\n")]
+            gen_paras = [p.strip() for p in gen.split("\n") if p.strip() != '']
             start_pos = len(offsets)
             end_pos = start_pos + len(gen_paras)
             offsets.append((start_pos, end_pos))
