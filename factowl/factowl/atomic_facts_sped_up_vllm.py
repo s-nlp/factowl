@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import string
+import time
 from typing import List
 
 import nltk
@@ -115,7 +116,13 @@ class AtomicFactGeneratorSpedUpVLLM(object):
             for p in all_paragraphs[:3]:
                 logging.info(f"\tSplitted paragraph: {p}")
         # ------------------------------------------------------------------------------------
+        print(f"Starting fact generation")
+        start_time = time.time()
         atoms = self.get_init_atomic_facts_from_paragraphs(all_paragraphs, cost_estimate=cost_estimate)
+        end_time = time.time()
+
+        print(f"Fact generation took: {end_time - start_time} seconds")
+
         grouped_atomic_facts = []
         for st, end in offsets:
             paragraphs = all_paragraphs[st:end]
