@@ -3,6 +3,7 @@ import logging
 import os
 import re
 import string
+from typing import List
 
 import nltk
 import numpy as np
@@ -14,11 +15,11 @@ from transformers import AutoTokenizer
 nltk.download("punkt")
 
 DEFAULT_ATOMIZATION_PROMPT = "You are an expert fact extraction and verification assistant. " \
-                 "Please read the following text carefully and break it down into distinct, independent facts. " \
-                 "For each fact, disambiguate it to ensure clarity and precision (e.g., replace ambiguous prepositions). " \
-                 "Each fact should be written on its own line. " \
-                 "Each line must start with a hyphen and space ('- '). " \
-                 "Do not include any additional explanation or formatting - just the list of facts if there are any."
+                             "Please read the following text carefully and break it down into distinct, independent facts. " \
+                             "For each fact, disambiguate it to ensure clarity and precision (e.g., replace ambiguous prepositions). " \
+                             "Each fact should be written on its own line. " \
+                             "Each line must start with a hyphen and space ('- '). " \
+                             "Do not include any additional explanation or formatting - just the list of facts if there are any."
 
 
 class VLLMGenerator:
@@ -97,22 +98,46 @@ class AtomicFactGeneratorSpedUpVLLM(object):
                 logging.info(f"\tSplitted paragraph: {p}")
         return self.get_atomic_facts_from_paragraph(paragraphs, cost_estimate=cost_estimate)
 
+    def run_generations_list(self, generations: List[str], cost_estimate=None):
+        assert isinstance(generations, list), "Expected a list of generations"
+        all_paragraphs = []
+        offsets = []
+        for gen in generations:
+            gen_paras = [p.strip() for p in gen.split("\n")]
+            start_pos = len(offsets)
+            end_pos = start_pos + len(gen_paras)
+            offsets.append((start_pos, end_pos))
+            all_paragraphs.extend(gen_paras)
+
+        if self.debug:
+            logging.info(
+                f"Splitting generation (len: {len(generations[0])}): {generations[0][:100]} ... {generations[0][100:]} ")
+            for p in all_paragraphs[:3]:
+                logging.info(f"\tSplitted paragraph: {p}")
+        # ------------------------------------------------------------------------------------
+        atoms = self.get_init_atomic_facts_from_paragraphs(all_paragraphs, cost_estimate=cost_estimate)
+        grouped_atomic_facts = []
+        for st, end in offsets:
+            paragraphs = all_paragraphs[st:end]
+            atomic_facts_pairs = []
+            para_breaks = []
+            for i, para in enumerate(paragraphs):
+                if self.is_bio and para.startswith("This sentence does not contain any facts"):
+                    atomic_facts_pairs.append((para, []))
+                else:
+                    atomic_facts_pairs.append((para, atoms[para]))
+            if self.is_bio:
+                atomic_facts_pairs, para_breaks = postprocess_atomic_facts(atomic_facts_pairs, list(para_breaks),
+                                                                           self.nlp)
+            grouped_atomic_facts.append(atomic_facts_pairs)
+        return grouped_atomic_facts
+
     def get_atomic_facts_from_paragraph(self, paragraphs, cost_estimate=None):
         # sentences = []
         para_breaks = []
 
         atoms_or_estimate = self.get_init_atomic_facts_from_paragraphs(paragraphs, cost_estimate=cost_estimate)
-        """
-        [sent for i, sent in enumerate(sentences) if not (not self.is_bio and (
-            (i == 0 and (sent.startswith("Sure") or sent.startswith("Here are"))) or 
-            (i == len(sentences) - 1 and (
-                sent.startswith("Please") or 
-                sent.startswith("I hope") or 
-                sent.startswith("Here are")
-            ))
-        ))]
-        """
-        # TODO: CHANGE PROMPT AND PROCESS NO FACTS CASE?
+
         if cost_estimate:
             return atoms_or_estimate
         else:
@@ -349,6 +374,7 @@ def postprocess_atomic_facts(_atomic_facts, para_breaks, nlp):
         new_atomic_facts.append((sent, new_facts))
 
     return new_atomic_facts, new_para_breaks
+
 
 def is_integer(s):
     try:

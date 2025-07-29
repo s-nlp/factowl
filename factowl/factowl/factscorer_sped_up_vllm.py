@@ -36,6 +36,7 @@ class FactScorerSpedUpVLLM(object):
                  precomputed_passages=None,
                  concat_topic=False,
                  multifact_verification: bool = False,
+                 batched_fact_generation: bool = False,
                  verbose=False
                  ):
         assert model_name in ["retrieval+llama", "retrieval+llama+npm", "retrieval+ChatGPT", "npm",
@@ -97,6 +98,7 @@ class FactScorerSpedUpVLLM(object):
             self.extr_ps = '-extra'
         self.concat_topic = concat_topic
         self.multifact_verification = multifact_verification
+        self.batched_fact_generation = batched_fact_generation
         self.verbose = verbose
         # self.torch_compile = torch_compile
 
@@ -108,11 +110,13 @@ class FactScorerSpedUpVLLM(object):
         if data_path is None:
             data_path = os.path.join(self.data_dir, f"{name}.jsonl")
         fps = "-fullpage" if self.multifact_verification else ''
+        bfgs = "-bfg" if self.batched_fact_generation else ''
+
 
         cache_path = os.path.join(self.cache_dir,
-                                  f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}{fps}.json")
+                                  f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}{fps}{bfgs}.json")
         embed_cache_path = os.path.join(self.cache_dir,
-                                        f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}{fps}.pkl")
+                                        f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}{fps}{bfgs}.pkl")
 
         self.db[name] = DocDB(db_path=db_path, data_path=data_path)
         self.retrieval[name] = Retrieval(self.db[name], cache_path, embed_cache_path, "bm25",
@@ -174,7 +178,14 @@ class FactScorerSpedUpVLLM(object):
         batch_topic_labels = []
         all_atomic_facts = []
         all_decisions = []
-        for i, (topic, gen) in enumerate(zip(topics, generations)):
+        if self.batched_fact_generation:
+            atomic_facts = self.af_generator.run_generations_list(generations)
+        else:
+            # Placeholder for non-precompute case of fact generator
+            atomic_facts = [1, ] * len(topics)
+        iterations = zip(topics, generations, atomic_facts)
+
+        for i, (topic, gen, curr_afs) in enumerate(iterations):
             # optionally, first detect if the response is abstained
             response_abstained = is_response_abstained(gen, self.abstain_detection_type)
             # if response_abstained:
@@ -186,7 +197,8 @@ class FactScorerSpedUpVLLM(object):
             #     continue
 
             # continue only when the response is not abstained
-            curr_afs, _ = self.af_generator.run(gen)
+            if not self.batched_fact_generation:
+                curr_afs, _ = self.af_generator.run(gen)
             curr_afs = list(dict.fromkeys(([fact for _, facts in curr_afs for fact in facts])))
 
             if self.debug:
@@ -207,7 +219,8 @@ class FactScorerSpedUpVLLM(object):
                 batch_atomic_facts.append(curr_afs)
                 batch_topic_labels.append(topic)
             # if i > 0 and i % self.dump_every_int == 0:
-            if len(batch_atomic_facts) >= self.dump_every_int:
+
+            if len(batch_atomic_facts) >= self.dump_every_int and (not self.batched_fact_generation):
                 self.batch_verify_facts(batch_topic_labels=batch_topic_labels,
                                         batch_atomic_facts=batch_atomic_facts,
                                         all_decisions=all_decisions,
@@ -282,7 +295,7 @@ class FactScorerSpedUpVLLM(object):
                      total=min(len(batch_topic_labels), len(batch_atomic_facts)),
                      miniters=10)
             else:
-                it = zip(batch_topic_labels, batch_atomic_facts),
+                it = zip(batch_topic_labels, batch_atomic_facts)
             for t, afs in it:
                 if afs is None or len(afs) == 0:
                     topic_decisions = [{"topic": t, "atom": None, "is_supported": False}, ]
