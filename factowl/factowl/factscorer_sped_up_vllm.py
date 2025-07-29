@@ -181,7 +181,7 @@ class FactScorerSpedUpVLLM(object):
         if self.batched_fact_generation:
             abstains_list = [is_response_abstained(gen, self.abstain_detection_type) for gen in generations]
             self.af_generator.vllm_tqdm = True
-            self.vllm_verifier.vllm_tqdm = True
+            self.verbose = True
             positions = []
             filt_generations = []
             for i, (g, a) in enumerate(zip(generations, abstains_list)):
