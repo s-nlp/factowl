@@ -179,7 +179,22 @@ class FactScorerSpedUpVLLM(object):
         all_atomic_facts = []
         all_decisions = []
         if self.batched_fact_generation:
-            atomic_facts = self.af_generator.run_generations_list(generations)
+            abstains_list = [is_response_abstained(gen, self.abstain_detection_type) for gen in generations]
+            self.af_generator.vllm_tqdm = True
+            self.vllm_verifier.vllm_tqdm = True
+            positions = []
+            filt_generations = []
+            for i, (g, a) in enumerate(zip(generations, abstains_list)):
+                if not a:
+                    positions.append(i)
+                    filt_generations.append(g)
+            # filt_generations = [g for g, a in zip(generations, abstains_list) if not a]
+            filt_atomic_facts = self.af_generator.run_generations_list(filt_generations)
+            assert len(filt_atomic_facts) == len(positions)
+            atomic_facts = [list() for _ in generations]
+            for pos, afs in zip(positions, filt_atomic_facts):
+                atomic_facts[pos] = afs
+
         else:
             # Placeholder for non-precompute case of fact generator
             atomic_facts = [1, ] * len(topics)

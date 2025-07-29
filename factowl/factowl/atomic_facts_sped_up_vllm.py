@@ -43,13 +43,14 @@ class VLLMGenerator:
         # Load model with tensor parallelism if multi-GPU
         self.model = vllm_model
 
-    def generate(self, prompts):
-        return self.model.generate(prompts, sampling_params=self.sampling_params, use_tqdm=False)
+    def generate(self, prompts, use_tqdm):
+        return self.model.generate(prompts, sampling_params=self.sampling_params, use_tqdm=use_tqdm)
 
 
 class AtomicFactGeneratorSpedUpVLLM(object):
     def __init__(self, demon_dir, vllm_model, model_name, is_bio=False, debug=False,
-                 system_prompt=None, max_tokens: int = 2048, temperature: float = 0.):
+                 system_prompt=None, max_tokens: int = 2048, temperature: float = 0.,
+                 vllm_tqdm=False):
         import spacy
         self.nlp = spacy.load("en_core_web_sm")
         self.is_bio = is_bio
@@ -68,6 +69,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         self.system_prompt = system_prompt
         self.max_new_tokens = max_tokens
         self.temperature = temperature
+        self.vllm_tqdm = vllm_tqdm
 
     def create_messages(self, example_queries, example_outputs, new_query):
         assert self.system_prompt is not None
@@ -205,7 +207,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
             ]
             if self.debug:
                 logging.info(f"Atomic facts prompt:\n{prompts}")
-            outputs = self.vllm.generate(prompts)
+            outputs = self.vllm.generate(prompts, use_tqdm=self.vllm_tqdm)
             gen_texts = [o.outputs[0].text for o in outputs]
             if self.debug:
                 s_lst = [f"PROMPT:{x}\nOUTPUT:{y}\n" for x, y in zip(prompts, gen_texts)]

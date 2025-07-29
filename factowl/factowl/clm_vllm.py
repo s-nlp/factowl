@@ -17,20 +17,18 @@ DEFAULT_VERIFICATION_SYSTEM_PROMPT = "You are an expert fact extraction and veri
                                      "3. Output 'False' if no passage  supports the fact.\n" \
                                      "4. Do not include any additional information and explanations, you must only answer 'True' or 'False'."
 
-
 MULTIFACT_VERIFICATION_SYSTEM_PROMPT = "You are an expert fact verification assistant. You are given:\n" \
-    "1. The full text of a Wikipedia page on a relevant topic.\n"  \
-    "2. An enumerated list of atomic facts (N facts), each on a new line.\n\n"  \
-    "Your task is to determine whether each fact is supported or refuted by the Wikipedia page.\n\n"  \
-    "Instructions:\n"  \
-    "1. Check if any part of the provided Wikipedia page directly supports the fact.\n"  \
-    "2. Output 'True' if at least one part of the page supports the fact, even if other parts contradict it.\n"  \
-    "3. Output 'False' if no part of the page supports the fact.\n"  \
-    "4. For each fact, you must output exactly a single line with the fact's integer identifier and True/False atomic fact label. The line format is as follows:\n"  \
-    "[fact_id]. [True/False]\n"  \
-    "where [fact_id] is the integer identifier from the input list.\n"  \
-    "5. Do not include any additional explanations, comments, or formatting."
-
+                                       "1. The full text of a Wikipedia page on a relevant topic.\n" \
+                                       "2. An enumerated list of atomic facts (N facts), each on a new line.\n\n" \
+                                       "Your task is to determine whether each fact is supported or refuted by the Wikipedia page.\n\n" \
+                                       "Instructions:\n" \
+                                       "1. Check if any part of the provided Wikipedia page directly supports the fact.\n" \
+                                       "2. Output 'True' if at least one part of the page supports the fact, even if other parts contradict it.\n" \
+                                       "3. Output 'False' if no part of the page supports the fact.\n" \
+                                       "4. For each fact, you must output exactly a single line with the fact's integer identifier and True/False atomic fact label. The line format is as follows:\n" \
+                                       "[fact_id]. [True/False]\n" \
+                                       "where [fact_id] is the integer identifier from the input list.\n" \
+                                       "5. Do not include any additional explanations, comments, or formatting."
 
 DEFAULT_FACT_VERIFICATION_QUERY_TEMPLATE = """
 Passages:
@@ -73,7 +71,7 @@ Atomic fact labels:
 class FactVerificatorSpedUpVLLM(object):
     def __init__(self, vllm_model, model_name, is_bio=False, debug=False,
                  system_prompt=None, query_prompt_template=None, max_tokens: int = 1024, temperature: float = 0.,
-                 context_type="db"):
+                 context_type="db", vllm_tqdm=False):
         assert context_type in ("db", "wikipedia_api")
         self.is_bio = is_bio
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -90,6 +88,7 @@ class FactVerificatorSpedUpVLLM(object):
         self.max_new_tokens = max_tokens
         self.temperature = temperature
         self.context_type = context_type
+        self.vllm_tqdm = vllm_tqdm
 
         self.sampling_params = SamplingParams(
             max_tokens=self.max_new_tokens,
@@ -158,6 +157,5 @@ class FactVerificatorSpedUpVLLM(object):
 
         return messages
 
-
     def generate(self, prompts):
-        return self.vllm.generate(prompts)
+        return self.vllm.generate(prompts, use_tqdm=self.vllm_tqdm)
