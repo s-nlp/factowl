@@ -107,11 +107,12 @@ class FactScorerSpedUpVLLM(object):
 
         if data_path is None:
             data_path = os.path.join(self.data_dir, f"{name}.jsonl")
+        fps = "-fullpage" if self.multifact_verification else ''
 
         cache_path = os.path.join(self.cache_dir,
-                                  f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}.json")
+                                  f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}{fps}.json")
         embed_cache_path = os.path.join(self.cache_dir,
-                                        f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}.pkl")
+                                        f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}{fps}.pkl")
 
         self.db[name] = DocDB(db_path=db_path, data_path=data_path)
         self.retrieval[name] = Retrieval(self.db[name], cache_path, embed_cache_path, "bm25",
