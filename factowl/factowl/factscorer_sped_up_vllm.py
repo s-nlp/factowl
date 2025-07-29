@@ -193,11 +193,12 @@ class FactScorerSpedUpVLLM(object):
             assert len(filt_atomic_facts) == len(positions)
             atomic_facts = [list() for _ in generations]
             for pos, afs in zip(positions, filt_atomic_facts):
-                atomic_facts[pos] = afs
+                atomic_facts[pos].extend(afs)
 
         else:
             # Placeholder for non-precompute case of fact generator
             atomic_facts = [1, ] * len(topics)
+        assert len(topics) == len(generations) == len(atomic_facts)
         iterations = zip(topics, generations, atomic_facts)
 
         for i, (topic, gen, curr_afs) in enumerate(iterations):

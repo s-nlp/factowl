@@ -123,7 +123,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         atoms = self.get_init_atomic_facts_from_paragraphs(all_paragraphs, cost_estimate=cost_estimate)
         end_time = time.time()
 
-        print(f"Fact generation took: {end_time - start_time} seconds")
+        print(f"Fact generation took {end_time - start_time} seconds")
 
         grouped_atomic_facts = []
         for st, end in offsets:
