@@ -107,7 +107,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         offsets = []
         for gen in generations:
             gen_paras = [p.strip() for p in gen.split("\n") if p.strip() != '']
-            start_pos = len(offsets)
+            start_pos = len(all_paragraphs)
             end_pos = start_pos + len(gen_paras)
             offsets.append((start_pos, end_pos))
             all_paragraphs.extend(gen_paras)
@@ -139,6 +139,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
                 atomic_facts_pairs, para_breaks = postprocess_atomic_facts(atomic_facts_pairs, list(para_breaks),
                                                                            self.nlp)
             grouped_atomic_facts.append(atomic_facts_pairs)
+        assert len(grouped_atomic_facts) == len(generations)
         return grouped_atomic_facts
 
     def get_atomic_facts_from_paragraph(self, paragraphs, cost_estimate=None):
