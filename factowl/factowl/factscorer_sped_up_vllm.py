@@ -117,8 +117,9 @@ class FactScorerSpedUpVLLM(object):
                                   f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}{fps}{bfgs}.json")
         embed_cache_path = os.path.join(self.cache_dir,
                                         f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}{fps}{bfgs}.pkl")
-
-        self.db[name] = DocDB(db_path=db_path, data_path=data_path)
+        self.db[name] = None
+        if self.context_retrieval_type == "db":
+            self.db[name] = DocDB(db_path=db_path, data_path=data_path)
         self.retrieval[name] = Retrieval(self.db[name], cache_path, embed_cache_path, "bm25",
                                          batch_size=self.batch_size,
                                          device=self.retrieval_device,
