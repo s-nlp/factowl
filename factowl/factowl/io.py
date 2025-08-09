@@ -83,13 +83,13 @@ def save_predictions(eval_dict, save_path, print_res=True):
         print(f"Mean num facts in topics with at least 1 fact: {num_facts / len(unique_topics_w_atoms)}")
         print(f"Mean num facts in topics (with fact-less topics): {num_facts / len(unique_topics)}")
 
-        print(f"Mean score: {score}")
+        # print(f"Mean score: {score}")
         if eval_dict.get('init_score') is not None:
             print(f"init_score: {eval_dict['init_score']}")
 
         print(f"Method's score: {eval_dict['score']}")
-    eval_dict["mean_custom_score"] = score
-    eval_dict["mean_custom_deduplicated_score"] = dedup_score
+    # eval_dict["mean_custom_score"] = score
+    # eval_dict["mean_custom_deduplicated_score"] = dedup_score
 
     df = pd.DataFrame(samples)
     print(f"Saving atomic facts DataFrame. Size: {df.shape}, Columns: {df.columns}")
