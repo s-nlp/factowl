@@ -117,8 +117,8 @@ def save_eval_results(eval_dict, save_path):
         f.write(f"respond_ratio\t{respond_ratio}\n")
         f.write(f"num_facts_per_response\t{num_facts_per_response}\n")
 
-        f.write(f"mean_custom_score\t{mcc}\n")
-        f.write(f"mean_custom_deduplicated_score\t{mcdc}\n")
+        # f.write(f"mean_custom_score\t{mcc}\n")
+        # f.write(f"mean_custom_deduplicated_score\t{mcdc}\n")
 
 
 def json_docs2title_short_passages(docs, max_tokens=256):
