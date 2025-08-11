@@ -109,8 +109,8 @@ def save_eval_results(eval_dict, save_path):
         init_score = eval_dict["init_score"]
         num_facts_per_response = eval_dict["num_facts_per_response"]
 
-        mcdc = eval_dict["mean_custom_deduplicated_score"]
-        mcc = eval_dict["mean_custom_score"]
+        # mcdc = eval_dict["mean_custom_deduplicated_score"]
+        # mcc = eval_dict["mean_custom_score"]
 
         f.write(f"score\t{score}\n")
         f.write(f"init_score\t{init_score}\n")
