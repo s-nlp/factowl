@@ -36,7 +36,7 @@ class FactScorerSpedUpVLLM(object):
                  precomputed_passages=None,
                  concat_topic=False,
                  multifact_verification: bool = False,
-                 batched_fact_generation: bool = False,
+                 batched_fact_generation: bool = True,
                  verbose=False
                  ):
         assert model_name in ["retrieval+llama", "retrieval+llama+npm", "retrieval+ChatGPT", "npm",
