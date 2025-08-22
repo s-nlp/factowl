@@ -37,7 +37,9 @@ class FactScorerSpedUpVLLM(object):
                  concat_topic=False,
                  multifact_verification: bool = False,
                  batched_fact_generation: bool = True,
-                 verbose=False
+                 use_this_topic2content_only = None,
+                 verbose=False,
+
                  ):
         assert model_name in ["retrieval+llama", "retrieval+llama+npm", "retrieval+ChatGPT", "npm",
                               "retrieval+ChatGPT+npm"]
@@ -99,6 +101,7 @@ class FactScorerSpedUpVLLM(object):
         self.concat_topic = concat_topic
         self.multifact_verification = multifact_verification
         self.batched_fact_generation = batched_fact_generation
+        self.use_this_topic2content_only = use_this_topic2content_only
         self.verbose = verbose
         # self.torch_compile = torch_compile
 
@@ -112,7 +115,6 @@ class FactScorerSpedUpVLLM(object):
         fps = "-fullpage" if self.multifact_verification else ''
         bfgs = "-bfg" if self.batched_fact_generation else ''
 
-
         cache_path = os.path.join(self.cache_dir,
                                   f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}{fps}{bfgs}.json")
         embed_cache_path = os.path.join(self.cache_dir,
@@ -125,6 +127,7 @@ class FactScorerSpedUpVLLM(object):
                                          device=self.retrieval_device,
                                          context_type=self.cxt_type,
                                          page_search_mode=self.page_search_mode,
+                                         use_this_topic2content_only=self.use_this_topic2content_only,
                                          context_num_pages=self.cxt_n_pages)
         cache_file = os.path.join(self.cache_dir,
                                   f"npm-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}.pkl")
@@ -133,7 +136,8 @@ class FactScorerSpedUpVLLM(object):
             self.npm[name] = NPM(Retrieval(self.db[name], cache_path, embed_cache_path, self.npm_retrieval_type,
                                            device=self.retrieval_device, context_type=self.cxt_type,
                                            page_search_mode=self.page_search_mode,
-                                           context_num_pages=self.cxt_n_pages),
+                                           context_num_pages=self.cxt_n_pages,
+                                           use_this_topic2content_only=self.use_this_topic2content_only),
                                  "npm-single",
                                  cache_file=cache_file,
                                  device=self.retrieval_device,

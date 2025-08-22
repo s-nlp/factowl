@@ -115,7 +115,8 @@ class DocDB(object):
 class Retrieval(object):
 
     def __init__(self, db, cache_path, embed_cache_path, retrieval_type="gtr-t5-large", batch_size=None,
-                 device="cuda", page_search_mode: str = "single", context_type=None, context_num_pages: int = 1):
+                 device="cuda", page_search_mode: str = "single", context_type=None, context_num_pages: int = 1,
+                 use_this_topic2content_only=None):
         assert context_type in ("db", "wikipedia_api")
         assert page_search_mode in ("single", "multi")
         if page_search_mode == "single":
@@ -143,6 +144,7 @@ class Retrieval(object):
             self.psg_tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
         self.page_search_mode = page_search_mode
         self.context_num_pages = context_num_pages
+        self.use_this_topic2content_only = use_this_topic2content_only
 
     def load_encoder(self):
         from sentence_transformers import SentenceTransformer
@@ -301,8 +303,11 @@ class Retrieval(object):
         if isinstance(topic, str):
             retrieval_query = topic + " " + question.strip()
             cache_key = topic + "#" + retrieval_query
-
-            passages = passages_fn(topic, question, k)
+            if not self.use_this_topic2content_only:
+                passages = passages_fn(topic, question, k)
+            else:
+                cxt = self.use_this_topic2content_only[topic]
+                passages = [x for x in cxt.strip().split('</s>') if x.strip() != '']
             return self.rerank_passages(cache_key=cache_key,
                                         topic=topic,
                                         retrieval_query=retrieval_query,
