@@ -307,7 +307,7 @@ class Retrieval(object):
                 passages = passages_fn(topic, question, k)
             else:
                 cxt = self.use_this_topic2content_only[topic]
-                passages = [x for x in cxt.strip().split('</s>') if x.strip() != '']
+                passages = [{"topic": topic, "text": x} for x in cxt.strip().split('</s>') if x.strip() != '']
             return self.rerank_passages(cache_key=cache_key,
                                         topic=topic,
                                         retrieval_query=retrieval_query,
