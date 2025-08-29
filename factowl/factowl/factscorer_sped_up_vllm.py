@@ -39,6 +39,7 @@ class FactScorerSpedUpVLLM(object):
                  batched_fact_generation: bool = True,
                  use_this_topic2content_only = None,
                  verbose=False,
+                 lang="en"
 
                  ):
         assert model_name in ["retrieval+llama", "retrieval+llama+npm", "retrieval+ChatGPT", "npm",
@@ -83,8 +84,9 @@ class FactScorerSpedUpVLLM(object):
         self.fact_generator_max_tokens = fact_generator_max_tokens
         self.verifier_temperature = verifier_temperature
         self.verifier_max_tokens = verifier_max_tokens
+        self.lang = lang
         self.vllm_verifier = FactVerificatorSpedUpVLLM(vllm_model, model_name=self.llm_dir_or_name, debug=debug,
-                                                       temperature=verifier_temperature,
+                                                       temperature=verifier_temperature, lang=lang,
                                                        max_tokens=verifier_max_tokens,
                                                        context_type=context_type)
         self.cxt_type = context_type

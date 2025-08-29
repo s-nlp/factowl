@@ -15,12 +15,17 @@ from transformers import AutoTokenizer
 # Ensure required models are downloaded
 nltk.download("punkt")
 
-DEFAULT_ATOMIZATION_PROMPT = "You are an expert fact extraction and verification assistant. " \
-                             "Please read the following text carefully and break it down into distinct, independent facts. " \
-                             "For each fact, disambiguate it to ensure clarity and precision (e.g., replace ambiguous prepositions). " \
-                             "Each fact should be written on its own line. " \
-                             "Each line must start with a hyphen and space ('- '). " \
-                             "Do not include any additional explanation or formatting - just the list of facts if there are any."
+DEFAULT_ATOMIZATION_PROMPTS = {"en": "You are an expert fact extraction and verification assistant. " \
+                                     "Please read the following text carefully and break it down into distinct, independent facts. " \
+                                     "For each fact, disambiguate it to ensure clarity and precision (e.g., replace ambiguous prepositions). " \
+                                     "Each fact should be written on its own line. " \
+                                     "Each line must start with a hyphen and space ('- '). " \
+                                     "Do not include any additional explanation or formatting - just the list of facts if there are any.",
+                               "zh": "你是一位专业的事实提取与验证助手。" \
+                                     "请仔细阅读以下文本，并将其分解为多个独立、互不依赖的事实。" \
+                                     "对每个事实进行消歧，以确保清晰和准确（例如，替换含义模糊的介词）。" \
+                                     "每个事实应单独成行，每行必须以连字符和空格（‘- ’）开头。" \
+                                     "不要包含任何额外的解释或格式——如果有事实，请仅列出事实列表。"}
 
 
 class VLLMGenerator:
@@ -50,7 +55,7 @@ class VLLMGenerator:
 class AtomicFactGeneratorSpedUpVLLM(object):
     def __init__(self, demon_dir, vllm_model, model_name, is_bio=False, debug=False,
                  system_prompt=None, max_tokens: int = 2048, temperature: float = 0.,
-                 vllm_tqdm=False):
+                 vllm_tqdm=False, lang: str = "en"):
         import spacy
         self.nlp = spacy.load("en_core_web_sm")
         self.is_bio = is_bio
@@ -65,7 +70,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         self.bm25 = BM25Okapi(tokenized_corpus)
         self.debug = debug
         if system_prompt is None:
-            system_prompt = DEFAULT_ATOMIZATION_PROMPT
+            system_prompt = DEFAULT_ATOMIZATION_PROMPTS[lang]
         self.system_prompt = system_prompt
         self.max_new_tokens = max_tokens
         self.temperature = temperature

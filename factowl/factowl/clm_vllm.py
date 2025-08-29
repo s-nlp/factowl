@@ -8,14 +8,21 @@ from factowl.atomic_facts_sped_up_vllm import VLLMGenerator
 from vllm import SamplingParams
 from transformers import AutoTokenizer
 
-DEFAULT_VERIFICATION_SYSTEM_PROMPT = "You are an expert fact extraction and verification assistant. " \
+DEFAULT_VERIFICATION_SYSTEM_PROMPT = {"en":"You are an expert fact extraction and verification assistant. " \
                                      "You are given an atomic fact and a list of textual passages. Your task is to determine whether the atomic fact " \
                                      "is True or False  based solely on the information in the passages.\n" \
                                      "Instructions:\n" \
                                      "1. Check if any of the passages directly support the atomic fact.\n" \
                                      "2. Output 'True' if at least one passage supports the fact even if another passage contradicts the fact.\n" \
                                      "3. Output 'False' if no passage  supports the fact.\n" \
-                                     "4. Do not include any additional information and explanations, you must only answer 'True' or 'False'."
+                                     "4. Do not include any additional information and explanations, you must only answer 'True' or 'False'.",
+                                      "zh": "你是一位专业的事实提取与验证助手。"
+                                            "你将获得一个原子事实和一组文本段落。你的任务是仅根据段落中的信息，判断该原子事实为‘真’或‘假’。\n" \
+                                            "指令：1. 检查是否有任何段落直接支持该原子事实。\n" \
+                                            "2. 如果至少有一个段落支持该事实，即使其他段落与之矛盾，也输出‘True’。\n" \
+                                            "3. 如果没有任何段落支持该事实，则输出‘False’。\n" \
+                                            "4. 不要包含任何额外信息或解释，你只能回答‘True’或‘False’。"
+                                      }
 
 MULTIFACT_VERIFICATION_SYSTEM_PROMPT = "You are an expert fact verification assistant. You are given:\n" \
                                        "1. The full text of a Wikipedia page on a relevant topic.\n" \
@@ -71,7 +78,7 @@ Atomic fact labels:
 class FactVerificatorSpedUpVLLM(object):
     def __init__(self, vllm_model, model_name, is_bio=False, debug=False,
                  system_prompt=None, query_prompt_template=None, max_tokens: int = 1024, temperature: float = 0.,
-                 context_type="db", vllm_tqdm=False):
+                 context_type="db", vllm_tqdm=False, lang: str = "en"):
         assert context_type in ("db", "wikipedia_api")
         self.is_bio = is_bio
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -80,7 +87,7 @@ class FactVerificatorSpedUpVLLM(object):
 
         self.debug = debug
         if system_prompt is None:
-            system_prompt = DEFAULT_VERIFICATION_SYSTEM_PROMPT
+            system_prompt = DEFAULT_VERIFICATION_SYSTEM_PROMPT[lang]
         self.system_prompt = system_prompt
         if query_prompt_template is None:
             query_prompt_template = DEFAULT_FACT_VERIFICATION_QUERY_TEMPLATE
