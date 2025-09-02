@@ -11,6 +11,27 @@ from factowl.retrieval import DocDB, Retrieval
 from tqdm import tqdm
 
 
+def check_english_fact_label(gen):
+    gen = gen.strip().strip('.').strip().lower()
+    if gen == "true":
+        return True
+    elif gen == "false":
+        return False
+    else:
+        return False
+
+
+def check_chinese_fact_label(gen):
+    gen = gen.strip().strip('。').strip()
+    return gen == "【真】"
+
+
+VERIFICATION_FNS_DICT = {
+    "en": check_english_fact_label,
+    "zh": check_chinese_fact_label
+}
+
+
 class FactScorerSpedUpVLLM(object):
     def __init__(self,
                  vllm_model,
@@ -37,7 +58,7 @@ class FactScorerSpedUpVLLM(object):
                  concat_topic=False,
                  multifact_verification: bool = False,
                  batched_fact_generation: bool = True,
-                 use_this_topic2content_only = None,
+                 use_this_topic2content_only=None,
                  verbose=False,
                  lang="en"
 
@@ -104,6 +125,7 @@ class FactScorerSpedUpVLLM(object):
         self.multifact_verification = multifact_verification
         self.batched_fact_generation = batched_fact_generation
         self.use_this_topic2content_only = use_this_topic2content_only
+        self.verification_label_fn = VERIFICATION_FNS_DICT[lang]
         self.verbose = verbose
         # self.torch_compile = torch_compile
 
@@ -315,8 +337,8 @@ class FactScorerSpedUpVLLM(object):
         else:
             if self.verbose:
                 it = tqdm(zip(batch_topic_labels, batch_atomic_facts),
-                     total=min(len(batch_topic_labels), len(batch_atomic_facts)),
-                     miniters=10)
+                          total=min(len(batch_topic_labels), len(batch_atomic_facts)),
+                          miniters=10)
             else:
                 it = zip(batch_topic_labels, batch_atomic_facts)
             for t, afs in it:
@@ -367,7 +389,7 @@ class FactScorerSpedUpVLLM(object):
         gen_texts = [None, ] * len(batch_atomic_facts)
         for j, o in zip(keep_indices, outputs):
             gen_texts[j] = o.outputs[0].text
-            
+
         assert len(gen_texts) == len(batch_atomic_facts) == len(batch_topics)
         if self.debug:
             logging.info("Verifying atomic facts....")
@@ -441,7 +463,7 @@ class FactScorerSpedUpVLLM(object):
         gen_texts = [o.outputs[0].text for o in outputs]
         assert len(gen_texts) == len(atomic_facts)
         for gen, atom in zip(gen_texts, atomic_facts):
-            is_supported = generation_get_verification(gen)
+            is_supported = self.verification_label_fn(gen)
 
             if is_supported and "npm" in self.model_name:
                 npprob = self.npm[knowledge_source].get_probabilty(topic, atom, k=self.n_npm_cxt)
@@ -455,16 +477,6 @@ class FactScorerSpedUpVLLM(object):
                 logging.info(f"{at} - {g} - {dec_d['is_supported']}")
 
         return decisions
-
-
-def generation_get_verification(gen):
-    gen = gen.strip().strip('.').strip().lower()
-    if gen == "true":
-        return True
-    elif gen == "false":
-        return False
-    else:
-        return False
 
 
 def calculate_score_from_decisions(all_atomic_facts, decisions, gamma):
