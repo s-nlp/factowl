@@ -284,7 +284,10 @@ class Retrieval(object):
             self.cache[cache_key] = self.get_bm25_passages(topic, retrieval_query, passages, k, cache=cache)
         else:
             self.cache[cache_key] = self.get_gtr_passages(topic, retrieval_query, passages, k)
-        assert len(self.cache[cache_key]) in [k, len(passages)]
+        if not (len(self.cache[cache_key]) in [k, len(passages)]):
+            raise RuntimeError(f"Tried cache_key:{cache_key}, expected {k} or {len(passages)}. "
+                               f"Got {len(passages)} passages: {passages}")
+        # assert len(self.cache[cache_key]) in [k, len(passages)]
         self.add_n += 1
 
         return self.cache[cache_key]
