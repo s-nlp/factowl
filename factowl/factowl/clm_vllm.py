@@ -8,18 +8,26 @@ from factowl.atomic_facts_sped_up_vllm import VLLMGenerator
 from vllm import SamplingParams
 from transformers import AutoTokenizer
 
-DEFAULT_VERIFICATION_SYSTEM_PROMPT = {"en":"You are an expert fact extraction and verification assistant. " \
-                                     "You are given an atomic fact and a list of textual passages. Your task is to determine whether the atomic fact " \
-                                     "is True or False  based solely on the information in the passages.\n" \
-                                     "Instructions:\n" \
-                                     "1. Check if any of the passages directly support the atomic fact.\n" \
-                                     "2. Output 'True' if at least one passage supports the fact even if another passage contradicts the fact.\n" \
-                                     "3. Output 'False' if no passage  supports the fact.\n" \
-                                     "4. Do not include any additional information and explanations, you must only answer 'True' or 'False'.",
+DEFAULT_VERIFICATION_SYSTEM_PROMPT = {"en": "You are an expert fact extraction and verification assistant. " \
+                                            "You are given an atomic fact and a list of textual passages. Your task is to determine whether the atomic fact " \
+                                            "is True or False  based solely on the information in the passages.\n" \
+                                            "Instructions:\n" \
+                                            "1. Check if any of the passages directly support the atomic fact.\n" \
+                                            "2. Output 'True' if at least one passage supports the fact even if another passage contradicts the fact.\n" \
+                                            "3. Output 'False' if no passage  supports the fact.\n" \
+                                            "4. Do not include any additional information and explanations, you must only answer 'True' or 'False'.",
                                       "zh": "你是一名事实核查专家。给定一个原子事实及若干文本段落，" \
                                             "请严格依据段落内容判断该事实为【真】或【假】：" \
                                             "若任一段落直接支持该事实（即使其他段落存在矛盾）" \
-                                            "，输出【真】；若无段落支持，输出【假】。仅回答【真】或【假】，无需任何解释。"
+                                            "，输出【真】；若无段落支持，输出【假】。仅回答【真】或【假】，无需任何解释。",
+                                      "ru": "Вы — эксперт по извлечению и проверке фактов. " \
+                                            "Вам предоставлен атомарный факт и список текстовых фрагментов. Ваша задача — определить, является ли атомарный факт " \
+                                            "«Верно» или «Неверно» исключительно на основе информации, содержащейся в этих фрагментах.\n"
+                                            "Инструкции:\n"
+                                            "1. Проверьте, поддерживает ли какой-либо из фрагментов факт напрямую.\n"
+                                            "2. Выведите «Верно», если хотя бы один фрагмент подтверждает факт, даже если другой фрагмент противоречит ему.\n"
+                                            "3. Выведите «Неверно», если ни один из фрагментов не поддерживает факт.\n"
+                                            "4. Не добавляйте никакой дополнительной информации и пояснений — отвечайте строго «Верно» или «Неверно».\n"
                                       # "zh": "你是一位专业的事实提取与验证助手。"
                                       #       "你将获得一个原子事实和一组文本段落。你的任务是仅根据段落中的信息，判断该原子事实为‘真’或‘假’。\n" \
                                       #       "指令：1. 检查是否有任何段落直接支持该原子事实。\n" \
@@ -40,13 +48,21 @@ MULTIFACT_VERIFICATION_SYSTEM_PROMPT = "You are an expert fact verification assi
                                        "[fact_id]. [True/False]\n" \
                                        "where [fact_id] is the integer identifier from the input list.\n" \
                                        "5. Do not include any additional explanations, comments, or formatting."
+# DEFAULT_FACT_VERIFICATION_QUERY_TEMPLATE = """
+# Passages:
+# <passages>
+# Atomic Fact: <atomic_fact>
+# True or False?
+# """
 
-DEFAULT_FACT_VERIFICATION_QUERY_TEMPLATE = """
-Passages:
-<passages>
-Atomic Fact: <atomic_fact>
-True or False? 
-"""
+
+DEFAULT_FACT_VERIFICATION_QUERY_TEMPLATE = {
+    "en": """Passages:\n<passages>\nAtomic Fact:\n<atomic_fact>\nTrue or False?\n""",
+    "ru": "Текстовые фрагменты:\n<passages>\n"
+          "Атомарный факт:\n<atomic_fact>\nВерно или Неверно?\n",
+    "zh": "段落：\n<passages>\n原子事实：\n<atomic_fact>\n正确还是错误？"
+    }
+
 
 DEFAULT_FACT_VERIFICATION_QUERY_TEMPLATE_WITH_TOPIC = """
 Passages:
@@ -94,7 +110,7 @@ class FactVerificatorSpedUpVLLM(object):
             system_prompt = DEFAULT_VERIFICATION_SYSTEM_PROMPT[lang]
         self.system_prompt = system_prompt
         if query_prompt_template is None:
-            query_prompt_template = DEFAULT_FACT_VERIFICATION_QUERY_TEMPLATE
+            query_prompt_template = DEFAULT_FACT_VERIFICATION_QUERY_TEMPLATE[lang]
         self.query_prompt_template = query_prompt_template
         self.max_new_tokens = max_tokens
         self.temperature = temperature
@@ -103,7 +119,7 @@ class FactVerificatorSpedUpVLLM(object):
 
         self.sampling_params = SamplingParams(
             max_tokens=self.max_new_tokens,
-            temperature=self.temperature,  # deterministic
+            temperature=self.temperature,
             stop=[self.tokenizer.eos_token]
         )
 

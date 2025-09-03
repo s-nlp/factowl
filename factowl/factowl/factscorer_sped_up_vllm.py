@@ -25,10 +25,15 @@ def check_chinese_fact_label(gen):
     gen = gen.strip().strip('。').strip()
     return gen == "【真】"
 
+def check_russian_fact_label(gen):
+    gen = gen.strip().lower()
+    return ("верно" in gen) and ("неверно" not in gen) and ("не верно" not in gen)
+
 
 VERIFICATION_FNS_DICT = {
     "en": check_english_fact_label,
-    "zh": check_chinese_fact_label
+    "zh": check_chinese_fact_label,
+    "ru": check_russian_fact_label
 }
 
 
