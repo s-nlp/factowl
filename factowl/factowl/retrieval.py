@@ -3,6 +3,8 @@ import os
 import pickle as pkl
 import sqlite3
 import time
+from typing import List
+import jieba
 
 import numpy as np
 from rank_bm25 import BM25Okapi
@@ -112,11 +114,15 @@ class DocDB(object):
         return results
 
 
+def chinese_tokenize(text: str) -> List[str]:
+    return list(jieba.cut(text))
+
+
 class Retrieval(object):
 
     def __init__(self, db, cache_path, embed_cache_path, retrieval_type="gtr-t5-large", batch_size=None,
                  device="cuda", page_search_mode: str = "single", context_type=None, context_num_pages: int = 1,
-                 use_this_topic2content_only=None):
+                 use_this_topic2content_only=None, lang: str = "en"):
         assert context_type in ("db", "wikipedia_api")
         assert page_search_mode in ("single", "multi")
         if page_search_mode == "single":
@@ -145,6 +151,7 @@ class Retrieval(object):
         self.page_search_mode = page_search_mode
         self.context_num_pages = context_num_pages
         self.use_this_topic2content_only = use_this_topic2content_only
+        self.lang = lang
 
     def load_encoder(self):
         from sentence_transformers import SentenceTransformer
@@ -234,10 +241,17 @@ class Retrieval(object):
             #     inputs = [[f"{topic}. {p}", ] for p in passages]
             # else:
             #     raise RuntimeError(f"Invalid context_type: {self.context_type}")
-            bm25 = BM25Okapi(inputs)
+            if "zh" in self.lang:
+                bm25 = BM25Okapi(inputs, tokenizer=chinese_tokenize)
+            else:
+                bm25 = BM25Okapi(inputs)
+
             self.embed_cache[topic] = bm25
             self.add_n_embed += 1
-        scores = bm25.get_scores(query.split())
+        if "zh" in self.lang:
+            scores = bm25.get_scores(query)
+        else:
+            scores = bm25.get_scores(query.split())
         indices = np.argsort(-scores)[:k]
         return [passages[i] for i in indices]
 

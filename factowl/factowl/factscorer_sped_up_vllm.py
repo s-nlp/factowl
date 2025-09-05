@@ -159,7 +159,8 @@ class FactScorerSpedUpVLLM(object):
                                          context_type=self.cxt_type,
                                          page_search_mode=self.page_search_mode,
                                          use_this_topic2content_only=self.use_this_topic2content_only,
-                                         context_num_pages=self.cxt_n_pages)
+                                         context_num_pages=self.cxt_n_pages,
+                                         lang=self.lang)
         cache_file = os.path.join(self.cache_dir,
                                   f"npm-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}.pkl")
         self.npm[name] = None
@@ -168,7 +169,8 @@ class FactScorerSpedUpVLLM(object):
                                            device=self.retrieval_device, context_type=self.cxt_type,
                                            page_search_mode=self.page_search_mode,
                                            context_num_pages=self.cxt_n_pages,
-                                           use_this_topic2content_only=self.use_this_topic2content_only),
+                                           use_this_topic2content_only=self.use_this_topic2content_only,
+                                           lang=self.lang),
                                  "npm-single",
                                  cache_file=cache_file,
                                  device=self.retrieval_device,
