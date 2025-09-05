@@ -27,7 +27,15 @@ DEFAULT_VERIFICATION_SYSTEM_PROMPT = {"en": "You are an expert fact extraction a
                                             "1. Проверьте, поддерживает ли какой-либо из фрагментов факт напрямую.\n"
                                             "2. Выведите «Верно», если хотя бы один фрагмент подтверждает факт, даже если другой фрагмент противоречит ему.\n"
                                             "3. Выведите «Неверно», если ни один из фрагментов не поддерживает факт.\n"
-                                            "4. Не добавляйте никакой дополнительной информации и пояснений — отвечайте строго «Верно» или «Неверно».\n"
+                                            "4. Не добавляйте никакой дополнительной информации и пояснений — отвечайте строго «Верно» или «Неверно».\n",
+                                      "zh1": "You are an expert fact extraction and verification assistant. " \
+                                             "You are given an atomic fact and a list of textual passages. Your task is to determine whether the atomic fact " \
+                                             "is True or False  based solely on the information in the passages.\n" \
+                                             "Instructions:\n" \
+                                             "1. Check if any of the passages directly support the atomic fact.\n" \
+                                             "2. Output 'True' if at least one passage supports the fact even if another passage contradicts the fact.\n" \
+                                             "3. Output 'False' if no passage  supports the fact.\n" \
+                                             "4. Do not include any additional information and explanations, you must only answer 'True' or 'False'.",
                                       # "zh": "你是一位专业的事实提取与验证助手。"
                                       #       "你将获得一个原子事实和一组文本段落。你的任务是仅根据段落中的信息，判断该原子事实为‘真’或‘假’。\n" \
                                       #       "指令：1. 检查是否有任何段落直接支持该原子事实。\n" \
@@ -60,9 +68,9 @@ DEFAULT_FACT_VERIFICATION_QUERY_TEMPLATE = {
     "en": """Passages:\n<passages>\nAtomic Fact:\n<atomic_fact>\nTrue or False?\n""",
     "ru": "Текстовые фрагменты:\n<passages>\n"
           "Атомарный факт:\n<atomic_fact>\nВерно или Неверно?\n",
-    "zh": "段落：\n<passages>\n原子事实：\n<atomic_fact>\n正确还是错误？"
-    }
-
+    "zh": "段落：\n<passages>\n原子事实：\n<atomic_fact>\n正确还是错误？",
+    "zh1": """Passages:\n<passages>\nAtomic Fact:\n<atomic_fact>\nTrue or False?\n""",
+}
 
 DEFAULT_FACT_VERIFICATION_QUERY_TEMPLATE_WITH_TOPIC = """
 Passages:
