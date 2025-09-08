@@ -69,13 +69,13 @@ def save_predictions(eval_dict, save_path, print_res=True):
             "context": json.dumps(fact_dict.get("context", []), ensure_ascii=False),
             "num_context_passages": len(fact_dict.get("context", []))
         }
+        if d.get("true_label") is not None:
+            d["true_label"] = d["true_label"]
         samples.append(d)
         if atom not in seen_atoms:
             dedup_samples.append(d)
 
             seen_atoms.add(atom)
-    score = sum(x["label"] for x in samples) / len(samples)
-    dedup_score = sum(x["label"] for x in dedup_samples) / len(dedup_samples)
 
     num_facts = len(samples) # sum(len(x) for x in samples)
     # num_dedup_facts = sum(len(x) for x in dedup_samples)
