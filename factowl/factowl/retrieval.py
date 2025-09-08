@@ -299,8 +299,9 @@ class Retrieval(object):
         else:
             self.cache[cache_key] = self.get_gtr_passages(topic, retrieval_query, passages, k)
         if not (len(self.cache[cache_key]) in [k, len(passages)]):
-            raise RuntimeError(f"Tried cache_key:{cache_key}, expected {k} or {len(passages)}. "
-                               f"Got {len(self.cache[cache_key])} passages: {passages}")
+            raise RuntimeError(f"Tried cache_key:{cache_key}, expected {k} or {len(passages)}.\n"
+                               f"> Passages: {len(self.cache[cache_key])} {passages}\n"
+                               f"> Cached passages: {len(self.cache[cache_key])} {self.cache[cache_key]}")
         # assert len(self.cache[cache_key]) in [k, len(passages)]
         self.add_n += 1
 
