@@ -118,6 +118,15 @@ def chinese_tokenize(text: str) -> List[str]:
     return list(jieba.cut(text))
 
 
+def split_tokenize(text: str) -> List[str]:
+    return text.strip().split()
+
+
+LANG2TOKENIZE = {"en": split_tokenize,
+                 "zh": chinese_tokenize
+                 }
+
+
 class Retrieval(object):
 
     def __init__(self, db, cache_path, embed_cache_path, retrieval_type="gtr-t5-large", batch_size=None,
@@ -152,6 +161,11 @@ class Retrieval(object):
         self.context_num_pages = context_num_pages
         self.use_this_topic2content_only = use_this_topic2content_only
         self.lang = lang
+        self.tokenize_fn = None
+        for lng in LANG2TOKENIZE.keys():
+            if lang in lng:
+                self.tokenize_fn = LANG2TOKENIZE[lng]
+                break
 
     def load_encoder(self):
         from sentence_transformers import SentenceTransformer
@@ -235,23 +249,18 @@ class Retrieval(object):
             bm25 = self.embed_cache[topic]
         else:
             # if self.context_type == "db":
-            inputs = [psg["text"].replace("<s>", "").replace("</s>", "").split() for psg in passages]
+            inputs = [self.tokenize_fn(psg["text"].replace("<s>", "").replace("</s>", "")) for psg in passages]
             # elif self.context_type == "wikipedia_api":
             #     # assert isinstance(passages, str)
             #     inputs = [[f"{topic}. {p}", ] for p in passages]
             # else:
             #     raise RuntimeError(f"Invalid context_type: {self.context_type}")
-            if "zh" in self.lang:
-                bm25 = BM25Okapi(inputs, tokenizer=chinese_tokenize)
-            else:
-                bm25 = BM25Okapi(inputs)
+            bm25 = BM25Okapi(inputs)
 
             self.embed_cache[topic] = bm25
             self.add_n_embed += 1
-        if "zh" in self.lang:
-            scores = bm25.get_scores(query)
-        else:
-            scores = bm25.get_scores(query.split())
+        scores = bm25.get_scores(self.tokenize_fn(query))
+
         indices = np.argsort(-scores)[:k]
         return [passages[i] for i in indices]
 
