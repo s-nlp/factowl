@@ -165,7 +165,7 @@ class Retrieval(object):
         self.lang = lang
         self.tokenize_fn = None
         for lng in LANG2TOKENIZE.keys():
-            if lang in lng:
+            if lng in lang:
                 self.tokenize_fn = LANG2TOKENIZE[lng]
                 break
 
