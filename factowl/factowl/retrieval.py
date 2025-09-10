@@ -122,9 +122,11 @@ def split_tokenize(text: str) -> List[str]:
     return text.strip().split()
 
 
-LANG2TOKENIZE = {"en": split_tokenize,
-                 "zh": chinese_tokenize
-                 }
+LANG2TOKENIZE = {
+    "en": split_tokenize,
+    "ru": split_tokenize,
+    "zh": chinese_tokenize
+}
 
 
 class Retrieval(object):
