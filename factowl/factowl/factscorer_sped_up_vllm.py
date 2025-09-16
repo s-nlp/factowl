@@ -71,7 +71,7 @@ class FactScorerSpedUpVLLM(object):
         self.llm = None
         self.tokenizer = None
 
-        self.atomic_facts_cache_dir = atomic_facts_cache_dir
+        self.atomic_facts_cache_dir = 'cachedir'
         self.dump_every_int = dump_every_int
         self.retrieval_device = retrieval_device
 
