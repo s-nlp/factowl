@@ -3,6 +3,8 @@ import logging
 import os
 import re
 import string
+import time
+from typing import List
 
 import nltk
 import numpy as np
@@ -14,11 +16,11 @@ from transformers import AutoTokenizer
 nltk.download("punkt")
 
 DEFAULT_ATOMIZATION_PROMPT = "You are an expert fact extraction and verification assistant. " \
-                 "Please read the following text carefully and break it down into distinct, independent facts. " \
-                 "For each fact, disambiguate it to ensure clarity and precision (e.g., replace ambiguous prepositions). " \
-                 "Each fact should be written on its own line. " \
-                 "Each line must start with a hyphen and space ('- '). " \
-                 "Do not include any additional explanation or formatting - just the list of facts if there are any."
+                             "Please read the following text carefully and break it down into distinct, independent facts. " \
+                             "For each fact, disambiguate it to ensure clarity and precision (e.g., replace ambiguous prepositions). " \
+                             "Each fact should be written on its own line. " \
+                             "Each line must start with a hyphen and space ('- '). " \
+                             "Do not include any additional explanation or formatting - just the list of facts if there are any."
 
 
 class VLLMGenerator:
@@ -41,13 +43,14 @@ class VLLMGenerator:
         # Load model with tensor parallelism if multi-GPU
         self.model = vllm_model
 
-    def generate(self, prompts):
-        return self.model.generate(prompts, sampling_params=self.sampling_params, use_tqdm=False)
+    def generate(self, prompts, use_tqdm):
+        return self.model.generate(prompts, sampling_params=self.sampling_params, use_tqdm=use_tqdm)
 
 
 class AtomicFactGeneratorSpedUpVLLM(object):
     def __init__(self, demon_dir, vllm_model, model_name, is_bio=False, debug=False,
-                 system_prompt=None, max_tokens: int = 2048, temperature: float = 0.):
+                 system_prompt=None, max_tokens: int = 2048, temperature: float = 0.,
+                 vllm_tqdm=False):
         import spacy
         self.nlp = spacy.load("en_core_web_sm")
         self.is_bio = is_bio
@@ -66,6 +69,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         self.system_prompt = system_prompt
         self.max_new_tokens = max_tokens
         self.temperature = temperature
+        self.vllm_tqdm = vllm_tqdm
 
     def create_messages(self, example_queries, example_outputs, new_query):
         assert self.system_prompt is not None
@@ -97,22 +101,53 @@ class AtomicFactGeneratorSpedUpVLLM(object):
                 logging.info(f"\tSplitted paragraph: {p}")
         return self.get_atomic_facts_from_paragraph(paragraphs, cost_estimate=cost_estimate)
 
+    def run_generations_list(self, generations: List[str], cost_estimate=None):
+        assert isinstance(generations, list), "Expected a list of generations"
+        all_paragraphs = []
+        offsets = []
+        for gen in generations:
+            gen_paras = [p.strip() for p in gen.split("\n") if p.strip() != '']
+            start_pos = len(all_paragraphs)
+            end_pos = start_pos + len(gen_paras)
+            offsets.append((start_pos, end_pos))
+            all_paragraphs.extend(gen_paras)
+
+        if self.debug:
+            logging.info(
+                f"Splitting generation (len: {len(generations[0])}): {generations[0][:100]} ... {generations[0][100:]} ")
+            for p in all_paragraphs[:3]:
+                logging.info(f"\tSplitted paragraph: {p}")
+        # ------------------------------------------------------------------------------------
+        print(f"Starting fact generation")
+        start_time = time.time()
+        atoms = self.get_init_atomic_facts_from_paragraphs(all_paragraphs, cost_estimate=cost_estimate)
+        end_time = time.time()
+
+        print(f"Fact generation took {end_time - start_time} seconds")
+
+        grouped_atomic_facts = []
+        for st, end in offsets:
+            paragraphs = all_paragraphs[st:end]
+            atomic_facts_pairs = []
+            para_breaks = []
+            for i, para in enumerate(paragraphs):
+                if self.is_bio and para.startswith("This sentence does not contain any facts"):
+                    atomic_facts_pairs.append((para, []))
+                else:
+                    atomic_facts_pairs.append((para, atoms[para]))
+            if self.is_bio:
+                atomic_facts_pairs, para_breaks = postprocess_atomic_facts(atomic_facts_pairs, list(para_breaks),
+                                                                           self.nlp)
+            grouped_atomic_facts.append(atomic_facts_pairs)
+        assert len(grouped_atomic_facts) == len(generations)
+        return grouped_atomic_facts
+
     def get_atomic_facts_from_paragraph(self, paragraphs, cost_estimate=None):
         # sentences = []
         para_breaks = []
 
         atoms_or_estimate = self.get_init_atomic_facts_from_paragraphs(paragraphs, cost_estimate=cost_estimate)
-        """
-        [sent for i, sent in enumerate(sentences) if not (not self.is_bio and (
-            (i == 0 and (sent.startswith("Sure") or sent.startswith("Here are"))) or 
-            (i == len(sentences) - 1 and (
-                sent.startswith("Please") or 
-                sent.startswith("I hope") or 
-                sent.startswith("Here are")
-            ))
-        ))]
-        """
-        # TODO: CHANGE PROMPT AND PROCESS NO FACTS CASE?
+
         if cost_estimate:
             return atoms_or_estimate
         else:
@@ -173,7 +208,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
             ]
             if self.debug:
                 logging.info(f"Atomic facts prompt:\n{prompts}")
-            outputs = self.vllm.generate(prompts)
+            outputs = self.vllm.generate(prompts, use_tqdm=self.vllm_tqdm)
             gen_texts = [o.outputs[0].text for o in outputs]
             if self.debug:
                 s_lst = [f"PROMPT:{x}\nOUTPUT:{y}\n" for x, y in zip(prompts, gen_texts)]
@@ -349,6 +384,7 @@ def postprocess_atomic_facts(_atomic_facts, para_breaks, nlp):
         new_atomic_facts.append((sent, new_facts))
 
     return new_atomic_facts, new_para_breaks
+
 
 def is_integer(s):
     try:

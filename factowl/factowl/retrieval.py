@@ -130,7 +130,10 @@ class Retrieval(object):
         assert retrieval_type == "bm25" or retrieval_type.startswith("gtr-")
 
         self.encoder = None
-        self.load_cache()
+        # TODO: Temporarily removed
+        # self.load_cache()
+        self.cache = {}
+        self.embed_cache = {}
         self.add_n = 0
         self.add_n_embed = 0
         self.device = device
@@ -358,3 +361,47 @@ class Retrieval(object):
         #     assert len(self.cache[cache_key]) in [k, len(passages)]
         #     self.add_n += 1
         # return self.cache[cache_key]
+
+    def get_full_page_local_db(self, topic):
+        passages = self.db.get_text_from_title(topic)
+        text = "".join((d["text"] for d in passages))
+
+        return text
+
+    def get_full_page_wikipedia_api(self, topic):
+        doc = retrieve_wikipedia_page(topic=topic)
+
+        cont = doc.content
+        lines = cont.split('\n')
+
+        stop_sections = {"References", "See also", "External links", "Further reading", "Notes", "Citations", "Sources"}
+        cur_section = ""
+        filtered_lines = []
+        for line in lines:
+            line = line.strip()
+            if line.startswith("==") and line.endswith("=="):
+                cur_section = line.strip().strip('=').strip()
+            if cur_section not in stop_sections:
+                filtered_lines.append(line)
+        page_text = '\n'.join(filtered_lines)
+
+        return page_text
+
+    def get_full_page_content(self, topic):
+
+        if not isinstance(topic, str):
+            raise NotImplementedError(f"Full-page retrieval mode only support single "
+                                      f"topic string setup (Got topics: {topic})")
+
+        if self.context_type == "db":
+            page_fn = self.get_full_page_local_db
+        elif self.context_type == "wikipedia_api":
+            page_fn = self.get_full_page_wikipedia_api
+        else:
+            raise RuntimeError(f"Invalid context retrieval: {self.context_type}")
+        if self.cache.get(topic) is None:
+            self.cache[topic] = page_fn(topic)
+
+        page_content = self.cache[topic]
+
+        return page_content

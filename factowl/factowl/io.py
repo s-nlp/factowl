@@ -37,7 +37,7 @@ def load_json_atomic_facts(p):
     return topics, gens
 
 
-def save_predictions(eval_dict, save_path):
+def save_predictions(eval_dict, save_path, print_res=True):
     d = os.path.dirname(save_path)
     if not os.path.exists(d):
         os.makedirs(d)
@@ -45,12 +45,18 @@ def save_predictions(eval_dict, save_path):
     samples = []
     dedup_samples = []
     seen_atoms = set()
+    unique_topics = set()
+    unique_topics_w_atoms = set()
     for sample_id, fact_dict in enumerate(decisions):
         if fact_dict is None:
             continue
         seen_atoms.clear()
-        # for fact_dict in dec:
         atom = fact_dict["atom"]
+        t = fact_dict["topic"]
+        unique_topics.add(t)
+        if atom is not None:
+            unique_topics_w_atoms.add(t)
+
         sup = fact_dict["is_supported"]
         assert sup == np.True_ or sup == np.False_
         label = 1 if sup == np.True_ else 0
@@ -71,23 +77,22 @@ def save_predictions(eval_dict, save_path):
     score = sum(x["label"] for x in samples) / len(samples)
     dedup_score = sum(x["label"] for x in dedup_samples) / len(dedup_samples)
 
-    num_facts = sum(len(x) for x in samples)
-    num_dedup_facts = sum(len(x) for x in dedup_samples)
+    num_facts = len(samples) # sum(len(x) for x in samples)
+    # num_dedup_facts = sum(len(x) for x in dedup_samples)
+    if print_res:
+        print(f"Mean num facts in topics with at least 1 fact: {num_facts / len(unique_topics_w_atoms)}")
+        print(f"Mean num facts in topics (with fact-less topics): {num_facts / len(unique_topics)}")
 
-    print(f"Mean num facts: {num_facts / len(decisions)}")
-    print(f"Mean unique num facts:  {num_dedup_facts / len(decisions)}")
+        # print(f"Mean score: {score}")
+        if eval_dict.get('init_score') is not None:
+            print(f"init_score: {eval_dict['init_score']}")
 
-    print(f"Mean score: {score}")
-    print(f"Mean deduplicated score: {dedup_score}")
-    if eval_dict.get('init_score') is not None:
-        print(f"init_score: {eval_dict['init_score']}")
-
-    print(f"Method's score: {eval_dict['score']}")
-    eval_dict["mean_custom_score"] = score
-    eval_dict["mean_custom_deduplicated_score"] = dedup_score
+        print(f"Method's score: {eval_dict['score']}")
+    # eval_dict["mean_custom_score"] = score
+    # eval_dict["mean_custom_deduplicated_score"] = dedup_score
 
     df = pd.DataFrame(samples)
-    print(f"Created DataFrame. Size: {df.shape}, Columns: {df.columns}")
+    print(f"Saving atomic facts DataFrame. Size: {df.shape}, Columns: {df.columns}")
     out_dir = os.path.dirname(save_path)
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
@@ -104,16 +109,16 @@ def save_eval_results(eval_dict, save_path):
         init_score = eval_dict["init_score"]
         num_facts_per_response = eval_dict["num_facts_per_response"]
 
-        mcdc = eval_dict["mean_custom_deduplicated_score"]
-        mcc = eval_dict["mean_custom_score"]
+        # mcdc = eval_dict["mean_custom_deduplicated_score"]
+        # mcc = eval_dict["mean_custom_score"]
 
         f.write(f"score\t{score}\n")
         f.write(f"init_score\t{init_score}\n")
         f.write(f"respond_ratio\t{respond_ratio}\n")
         f.write(f"num_facts_per_response\t{num_facts_per_response}\n")
 
-        f.write(f"mean_custom_score\t{mcc}\n")
-        f.write(f"mean_custom_deduplicated_score\t{mcdc}\n")
+        # f.write(f"mean_custom_score\t{mcc}\n")
+        # f.write(f"mean_custom_deduplicated_score\t{mcdc}\n")
 
 
 def json_docs2title_short_passages(docs, max_tokens=256):
