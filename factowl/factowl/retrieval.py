@@ -10,6 +10,8 @@ import numpy as np
 from rank_bm25 import BM25Okapi
 from transformers import RobertaTokenizer
 from factowl.utils import retrieve_wikipedia_page, retrieve_multiple_wikipedia_pages
+import wikipedia
+
 
 SPECIAL_SEPARATOR = "####SPECIAL####SEPARATOR####"
 MAX_LENGTH = 256
@@ -164,10 +166,14 @@ class Retrieval(object):
         self.use_this_topic2content_only = use_this_topic2content_only
         self.lang = lang
         self.tokenize_fn = None
-        for lng in LANG2TOKENIZE.keys():
-            if lng in lang:
-                self.tokenize_fn = LANG2TOKENIZE[lng]
-                break
+
+        wikipedia.set_lang(lang)
+        self.tokenize_fn = LANG2TOKENIZE[lang]
+
+        # for lng in LANG2TOKENIZE.keys():
+        #     if lng in lang:
+        #         self.tokenize_fn = LANG2TOKENIZE[lng]
+        #         break
 
     def load_encoder(self):
         from sentence_transformers import SentenceTransformer
