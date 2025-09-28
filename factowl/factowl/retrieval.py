@@ -12,7 +12,6 @@ from transformers import RobertaTokenizer
 from factowl.utils import retrieve_wikipedia_page, retrieve_multiple_wikipedia_pages
 import wikipedia
 
-
 SPECIAL_SEPARATOR = "####SPECIAL####SEPARATOR####"
 MAX_LENGTH = 256
 
@@ -127,7 +126,8 @@ def split_tokenize(text: str) -> List[str]:
 LANG2TOKENIZE = {
     "en": split_tokenize,
     "ru": split_tokenize,
-    "zh": chinese_tokenize
+    "zh": chinese_tokenize,
+    "zh1": chinese_tokenize
 }
 
 
