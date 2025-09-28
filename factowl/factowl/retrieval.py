@@ -127,7 +127,7 @@ LANG2TOKENIZE = {
     "en": split_tokenize,
     "ru": split_tokenize,
     "zh": chinese_tokenize,
-    "zh1": chinese_tokenize
+    # "zh1": chinese_tokenize
 }
 
 
@@ -166,14 +166,15 @@ class Retrieval(object):
         self.use_this_topic2content_only = use_this_topic2content_only
         self.lang = lang
         self.tokenize_fn = None
-
+        for lng in LANG2TOKENIZE.keys():
+            if lng in lang:
+                self.lang = lng
+                self.tokenize_fn = LANG2TOKENIZE[lng]
+                break
         wikipedia.set_lang(lang)
         self.tokenize_fn = LANG2TOKENIZE[lang]
 
-        # for lng in LANG2TOKENIZE.keys():
-        #     if lng in lang:
-        #         self.tokenize_fn = LANG2TOKENIZE[lng]
-        #         break
+
 
     def load_encoder(self):
         from sentence_transformers import SentenceTransformer
