@@ -168,11 +168,11 @@ class Retrieval(object):
         self.tokenize_fn = None
         for lng in LANG2TOKENIZE.keys():
             if lng in lang:
+
                 self.lang = lng
                 self.tokenize_fn = LANG2TOKENIZE[lng]
                 break
-        wikipedia.set_lang(lang)
-        self.tokenize_fn = LANG2TOKENIZE[lang]
+        wikipedia.set_lang(self.lang)
 
 
 
