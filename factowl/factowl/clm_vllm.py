@@ -70,7 +70,7 @@ DEFAULT_FACT_VERIFICATION_QUERY_TEMPLATE = {
     "ru": "Текстовые фрагменты:\n<passages>\n"
           "Атомарный факт:\n<atomic_fact>\nВерно или Неверно?\n",
     "zh": "段落：\n<passages>\n原子事实：\n<atomic_fact>\n正确还是错误？",
-    # "zh1": """Passages:\n<passages>\nAtomic Fact:\n<atomic_fact>\nTrue or False?\n""",
+    "zh1": """Passages:\n<passages>\nAtomic Fact:\n<atomic_fact>\nTrue or False?\n""",
 }
 
 DEFAULT_FACT_VERIFICATION_QUERY_TEMPLATE_WITH_TOPIC = """
