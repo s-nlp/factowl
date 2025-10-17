@@ -9,6 +9,7 @@ from factowl.clm_vllm import FactVerificatorSpedUpVLLM
 from factowl.npm import NPM
 from factowl.retrieval import DocDB, Retrieval
 from tqdm import tqdm
+from vllm.lora.request import LoRARequest
 
 
 def check_english_fact_label(gen):
@@ -67,6 +68,7 @@ class FactScorerSpedUpVLLM(object):
                  batched_fact_generation: bool = True,
                  use_this_topic2content_only=None,
                  verbose=False,
+                 lora_weights=None,
                  lang="en"
 
                  ):
@@ -113,10 +115,20 @@ class FactScorerSpedUpVLLM(object):
         self.verifier_temperature = verifier_temperature
         self.verifier_max_tokens = verifier_max_tokens
         self.lang = lang
+        self.lora_weights = lora_weights
+        self.lora_request = None
+        # Define the LoRA request
+        if self.lora_weights is not None:
+            self.lora_request = LoRARequest(
+                lora_name="lora",
+                lora_int_id=1,  # unique integer ID (must be >= 1)
+                lora_path=lora_weights  # LoRA adapter directory
+            )
         self.vllm_verifier = FactVerificatorSpedUpVLLM(vllm_model, model_name=self.llm_dir_or_name, debug=debug,
                                                        temperature=verifier_temperature, lang=lang,
                                                        max_tokens=verifier_max_tokens,
-                                                       context_type=context_type)
+                                                       context_type=context_type,
+                                                       lora_request=self.lora_request)
         self.cxt_type = context_type
         self.context_retrieval_type = context_retrieval_type
         self.npm_retrieval_type = npm_retrieval_type
@@ -134,6 +146,8 @@ class FactScorerSpedUpVLLM(object):
         self.use_this_topic2content_only = use_this_topic2content_only
         self.verification_label_fn = VERIFICATION_FNS_DICT[lang]
         self.verbose = verbose
+
+
         # self.torch_compile = torch_compile
 
     def register_knowledge_source(self, name="enwiki-20240401", db_path=None, data_path=None):
@@ -193,7 +207,8 @@ class FactScorerSpedUpVLLM(object):
                                                                   model_name=self.llm_dir_or_name,
                                                                   max_tokens=self.fact_generator_max_tokens,
                                                                   is_bio=self.is_bio,
-                                                                  debug=self.debug)
+                                                                  debug=self.debug,
+                                                                  lora_request=self.lora_request)
         if knowledge_source is None:
             # use the default knowledge source
             knowledge_source = "enwiki-20230401"

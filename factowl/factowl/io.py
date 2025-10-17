@@ -202,3 +202,11 @@ def load_json_atomic_facts_w_labels(p):
     assert len(topics) == len(atomic_facts) == len(labels)
 
     return topics, atomic_facts, labels
+
+
+def load_lora_adapter_cfg(lora_weights_dir: str):
+    cfg_p = os.path.join(lora_weights_dir, "adapter_config.json")
+    with open(cfg_p, "r") as f:
+        lora_cfg = json.load(f)
+
+    return lora_cfg

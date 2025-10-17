@@ -107,7 +107,7 @@ Atomic fact labels:
 class FactVerificatorSpedUpVLLM(object):
     def __init__(self, vllm_model, model_name, is_bio=False, debug=False,
                  system_prompt=None, query_prompt_template=None, max_tokens: int = 1024, temperature: float = 0.,
-                 context_type="db", vllm_tqdm=False, lang: str = "en"):
+                 context_type="db", vllm_tqdm=False, lang: str = "en", lora_request=None):
         assert context_type in ("db", "wikipedia_api")
         self.is_bio = is_bio
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -125,6 +125,7 @@ class FactVerificatorSpedUpVLLM(object):
         self.temperature = temperature
         self.context_type = context_type
         self.vllm_tqdm = vllm_tqdm
+        self.lora_request = lora_request
 
         self.sampling_params = SamplingParams(
             max_tokens=self.max_new_tokens,
@@ -194,4 +195,4 @@ class FactVerificatorSpedUpVLLM(object):
         return messages
 
     def generate(self, prompts):
-        return self.vllm.generate(prompts, use_tqdm=self.vllm_tqdm)
+        return self.vllm.generate(prompts, use_tqdm=self.vllm_tqdm, lora_request=self.lora_request)

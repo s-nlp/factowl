@@ -35,8 +35,8 @@ DEFAULT_ATOMIZATION_PROMPTS = {"en": "You are an expert fact extraction and veri
 
 
 class VLLMGenerator:
-    def __init__(self, vllm_model, model_name,
-                 debug=False, temperature: float = 0., max_tokens: int = 2048):
+    def __init__(self, vllm_model, model_name, debug=False, temperature: float = 0.,
+                 max_tokens: int = 2048, lora_request=None):
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         if self.tokenizer.pad_token_id is None:
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
@@ -50,25 +50,27 @@ class VLLMGenerator:
             stop=[self.tokenizer.eos_token]
         )
         self.debug = debug
+        self.lora_request = lora_request
 
         # Load model with tensor parallelism if multi-GPU
         self.model = vllm_model
 
     def generate(self, prompts, use_tqdm):
-        return self.model.generate(prompts, sampling_params=self.sampling_params, use_tqdm=use_tqdm)
+        return self.model.generate(prompts, sampling_params=self.sampling_params, use_tqdm=use_tqdm,
+                                   lora_request=self.lora_request)
 
 
 class AtomicFactGeneratorSpedUpVLLM(object):
     def __init__(self, demon_dir, vllm_model, model_name, is_bio=False, debug=False,
                  system_prompt=None, max_tokens: int = 2048, temperature: float = 0.,
-                 vllm_tqdm=False, lang: str = "en"):
+                 vllm_tqdm=False, lang: str = "en", lora_request=None):
         import spacy
         self.nlp = spacy.load("en_core_web_sm")
         self.is_bio = is_bio
         # self.is_bio = True
         self.demon_path = os.path.join(demon_dir, "demons.json" if self.is_bio else "demons_complex.json")
         self.vllm = VLLMGenerator(vllm_model=vllm_model, model_name=model_name, debug=debug, temperature=temperature,
-                                  max_tokens=max_tokens)
+                                  max_tokens=max_tokens, lora_request=lora_request)
         # get the demos
         with open(self.demon_path, 'r') as f:
             self.demons = json.load(f)
@@ -81,6 +83,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         self.max_new_tokens = max_tokens
         self.temperature = temperature
         self.vllm_tqdm = vllm_tqdm
+        self.lora_request = lora_request
 
     def create_messages(self, example_queries, example_outputs, new_query):
         assert self.system_prompt is not None
