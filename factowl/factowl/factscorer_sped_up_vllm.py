@@ -294,7 +294,7 @@ class FactScorerSpedUpVLLM(object):
                                         batch_atomic_facts=batch_atomic_facts,
                                         all_decisions=all_decisions,
                                         knowledge_source=knowledge_source)
-                self.retrieval[knowledge_source].save_cache()
+                # self.retrieval[knowledge_source].save_cache()
                 c = sum(len(z) for z in all_decisions)
                 decisions_fname = f"decisions_topics-{len(all_decisions)}-facts-{c}.tsv"
                 self.aggregate_verified_fact_scores(all_decisions=all_decisions,
@@ -308,7 +308,7 @@ class FactScorerSpedUpVLLM(object):
                                     batch_atomic_facts=batch_atomic_facts,
                                     all_decisions=all_decisions,
                                     knowledge_source=knowledge_source)
-            self.retrieval[knowledge_source].save_cache()
+            # self.retrieval[knowledge_source].save_cache()
         c = sum(len(z) for z in all_decisions)
         decisions_fname = f"decisions_topics-{len(all_decisions)}-facts-{c}.tsv"
         eval_dict = self.aggregate_verified_fact_scores(all_decisions=all_decisions,
