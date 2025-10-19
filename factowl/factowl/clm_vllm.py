@@ -195,4 +195,5 @@ class FactVerificatorSpedUpVLLM(object):
         return messages
 
     def generate(self, prompts):
-        return self.vllm.generate(prompts, use_tqdm=self.vllm_tqdm, lora_request=self.lora_request)
+        return self.vllm.generate(prompts, use_tqdm=self.vllm_tqdm)
+        #, lora_request=self.lora_request)

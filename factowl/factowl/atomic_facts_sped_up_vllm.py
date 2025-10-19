@@ -56,8 +56,8 @@ class VLLMGenerator:
         self.model = vllm_model
 
     def generate(self, prompts, use_tqdm):
-        return self.model.generate(prompts, sampling_params=self.sampling_params, use_tqdm=use_tqdm,
-                                   lora_request=self.lora_request)
+        return self.model.generate(prompts, sampling_params=self.sampling_params, use_tqdm=use_tqdm)
+                                   # lora_request=self.lora_request)
 
 
 class AtomicFactGeneratorSpedUpVLLM(object):
