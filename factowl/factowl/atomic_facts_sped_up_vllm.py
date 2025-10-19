@@ -108,6 +108,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         paragraphs = []
         for g in generation.split("\n"):
             pars = [para.strip() for para in g.split("    ") if len(para.strip()) > 0]
+            pars = [para for para in pars if para != '']
             paragraphs.extend(pars)
         if self.debug:
             logging.info(f"Splitting generation (len: {len(generation)}): {generation[:200]} ... {generation[200:]} ")
