@@ -438,7 +438,7 @@ class FactScorerSpedUpVLLM(object):
             fact_texts = gen_texts[start_pos:end_pos]
             decisions = []
 
-            for j, (atomic_facts, topic) in enumerate(zip(batch_atomic_facts, prompt_topics)):
+            for j, (atomic_facts, topic) in enumerate(zip(batch_atomic_facts, batch_topics)):
                 assert len(fact_texts) == len(atomic_facts)
                 for gen, atom in zip(fact_texts, atomic_facts):
                     is_supported = self.verification_label_fn(gen)
