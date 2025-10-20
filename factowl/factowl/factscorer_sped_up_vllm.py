@@ -422,6 +422,7 @@ class FactScorerSpedUpVLLM(object):
             end_pos = start_pos + len(topic_prompts)
             offsets.append((start_pos, end_pos))
             prompts.extend(topic_prompts)
+        logging.info(f"Creating prompts for {len(prompts)} facts...")
         prompts = [
             self.vllm_verifier.tokenizer.apply_chat_template(messages, tokenize=False,
                                                              add_generation_prompt=True)
