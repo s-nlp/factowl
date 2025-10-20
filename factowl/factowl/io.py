@@ -18,9 +18,19 @@ def load_json_generations(p):
             doc = json.loads(line)
             t = doc["topic"]
             g = doc["output"]
+            if doc.get("annotations") is not None:
+                anns = doc["annotations"]
+                drop = True
+                for ann in anns:
+                    haf = ann.get("human-atomic-facts")
+                    if haf is not None and haf != "null":
+                        drop = False
 
-            topics.append(t)
-            gens.append(g)
+            else:
+                continue
+            if not drop:
+                topics.append(t)
+                gens.append(g)
     return topics, gens
 
 
