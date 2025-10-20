@@ -430,7 +430,8 @@ class FactScorerSpedUpVLLM(object):
         ]
         if self.debug:
             logging.info(f"Atomic facts prompt:\n{prompts}")
-        outputs = self.vllm_verifier.generate(prompts, use_tqdm=True)
+        self.vllm_verifier.vllm_tqdm = True
+        outputs = self.vllm_verifier.generate(prompts)
         gen_texts = [o.outputs[0].text for o in outputs]
         all_decisions = []
         for (start_pos, end_pos) in offsets:
