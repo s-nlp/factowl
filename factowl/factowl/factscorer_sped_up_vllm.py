@@ -439,6 +439,9 @@ class FactScorerSpedUpVLLM(object):
             decisions = []
 
             for j, (atomic_facts, topic) in enumerate(zip(batch_atomic_facts, batch_topics)):
+                if atomic_facts is None or len(atomic_facts) == 0:
+                    all_decisions.append([{"topic": topic, "atom": None, "is_supported": False}, ])
+                    continue
                 assert len(fact_texts) == len(atomic_facts)
                 for gen, atom in zip(fact_texts, atomic_facts):
                     is_supported = self.verification_label_fn(gen)
