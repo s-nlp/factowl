@@ -388,16 +388,17 @@ class FactScorerSpedUpVLLM(object):
 
     def _get_score_vllm_batched(self, batch_topics, batch_atomic_facts, knowledge_source):
         # batch_contexts = [self.retrieval[knowledge_source].get_full_page_content(t) for t in batch_topics]
-        if self.concat_topic:
-            prompt_topics = batch_topics
-        else:
-            prompt_topics = [None, ] * len(batch_topics)
+        # if self.concat_topic:
+        #     prompt_topics = batch_topics
+        # else:
+        #     prompt_topics = [None, ] * len(batch_topics)
 
         # prompts = [self.vllm_verifier.create_messages_multi_fact(atomic_facts=x, context_page=y, topic=t) \
         #            for x, y, t in zip(batch_atomic_facts, batch_contexts, prompt_topics)]
         prompts = []
         offsets = []
-        for j, (atomic_facts, topic) in enumerate(zip(batch_atomic_facts, prompt_topics)):
+        logging.info(f"Collecting contexts, creating prompts...")
+        for j, (atomic_facts, topic) in tqdm(enumerate(zip(batch_atomic_facts, batch_topics)), miniters=25):
             topic_prompts = []
             if atomic_facts is not None and len(batch_atomic_facts) > 0:
                 for atom in atomic_facts:
