@@ -5,6 +5,7 @@ import sqlite3
 import time
 from typing import List
 import jieba
+import requests
 
 import numpy as np
 from rank_bm25 import BM25Okapi
@@ -189,9 +190,12 @@ class Retrieval(object):
         if doc is None:
             return passages
 
-        title = doc.title
-        cont = doc.content
-        lines = cont.split('\n')
+        try:
+            title = doc.title
+            cont = doc.content
+            lines = cont.split('\n')
+        except requests.exceptions.ConnectionError:
+            return []
 
         stop_sections = {"References", "See also", "External links", "Further reading", "Notes", "Citations", "Sources"}
         cur_section = ""
@@ -246,8 +250,11 @@ class Retrieval(object):
 
         if self.add_n_embed > 0:
             if os.path.exists(self.embed_cache_path):
-                with open(self.embed_cache_path, "rb") as f:
-                    new_cache = pkl.load(f)
+                try:
+                    with open(self.embed_cache_path, "rb") as f:
+                        new_cache = pkl.load(f)
+                except EOFError:
+                    return
                 self.embed_cache.update(new_cache)
 
             with open(self.embed_cache_path, "wb") as f:
@@ -344,7 +351,11 @@ class Retrieval(object):
             else:
                 cxt = self.use_this_topic2content_only[topic]
                 passages = [{"title": topic, "text": x} for x in cxt.strip().split('</s>') if x.strip() != '']
-            return self.rerank_passages(cache_key=cache_key,
+
+            if passages == []:
+                return passages
+            else:
+                return self.rerank_passages(cache_key=cache_key,
                                         topic=topic,
                                         retrieval_query=retrieval_query,
                                         passages=passages,
