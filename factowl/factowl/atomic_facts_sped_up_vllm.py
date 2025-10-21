@@ -15,17 +15,28 @@ from transformers import AutoTokenizer
 # Ensure required models are downloaded
 nltk.download("punkt")
 
-DEFAULT_ATOMIZATION_PROMPT = "You are an expert fact extraction and verification assistant. " \
-                             "Please read the following text carefully and break it down into distinct, independent facts. " \
-                             "For each fact, disambiguate it to ensure clarity and precision (e.g., replace ambiguous prepositions). " \
-                             "Each fact should be written on its own line. " \
-                             "Each line must start with a hyphen and space ('- '). " \
-                             "Do not include any additional explanation or formatting - just the list of facts if there are any."
+DEFAULT_ATOMIZATION_PROMPTS = {"en": "You are an expert fact extraction and verification assistant. " \
+                                     "Please read the following text carefully and break it down into distinct, independent facts. " \
+                                     "For each fact, disambiguate it to ensure clarity and precision (e.g., replace ambiguous prepositions). " \
+                                     "Each fact should be written on its own line. " \
+                                     "Each line must start with a hyphen and space ('- '). " \
+                                     "Do not include any additional explanation or formatting - just the list of facts if there are any.",
+                               "zh": "你是一位专业的事实提取与验证助手。" \
+                                     "请仔细阅读以下文本，并将其分解为多个独立、互不依赖的事实。" \
+                                     "对每个事实进行消歧，以确保清晰和准确（例如，替换含义模糊的介词）。" \
+                                     "每个事实应单独成行，每行必须以连字符和空格（‘- ’）开头。" \
+                                     "不要包含任何额外的解释或格式——如果有事实，请仅列出事实列表。",
+                               "zh1": "你是一位专业的事实提取与验证助手。请用中文进行回答。" \
+                                     "请仔细阅读以下文本，并将其分解为多个独立、互不依赖的事实。" \
+                                     "对每个事实进行消歧，以确保清晰和准确（例如，替换含义模糊的介词）。" \
+                                     "每个事实应单独成行，每行必须以连字符和空格（‘- ’）开头。" \
+                                     "不要包含任何额外的解释或格式——如果有事实，请仅列出事实列表。"
+                               }
 
 
 class VLLMGenerator:
-    def __init__(self, vllm_model, model_name,
-                 debug=False, temperature: float = 0., max_tokens: int = 2048):
+    def __init__(self, vllm_model, model_name, debug=False, temperature: float = 0.,
+                 max_tokens: int = 2048, lora_request=None):
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         if self.tokenizer.pad_token_id is None:
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
@@ -39,25 +50,27 @@ class VLLMGenerator:
             stop=[self.tokenizer.eos_token]
         )
         self.debug = debug
+        self.lora_request = lora_request
 
         # Load model with tensor parallelism if multi-GPU
         self.model = vllm_model
 
     def generate(self, prompts, use_tqdm):
         return self.model.generate(prompts, sampling_params=self.sampling_params, use_tqdm=use_tqdm)
+                                   # lora_request=self.lora_request)
 
 
 class AtomicFactGeneratorSpedUpVLLM(object):
     def __init__(self, demon_dir, vllm_model, model_name, is_bio=False, debug=False,
                  system_prompt=None, max_tokens: int = 2048, temperature: float = 0.,
-                 vllm_tqdm=False):
+                 vllm_tqdm=False, lang: str = "en", lora_request=None):
         import spacy
         self.nlp = spacy.load("en_core_web_sm")
         self.is_bio = is_bio
         # self.is_bio = True
         self.demon_path = os.path.join(demon_dir, "demons.json" if self.is_bio else "demons_complex.json")
         self.vllm = VLLMGenerator(vllm_model=vllm_model, model_name=model_name, debug=debug, temperature=temperature,
-                                  max_tokens=max_tokens)
+                                  max_tokens=max_tokens, lora_request=lora_request)
         # get the demos
         with open(self.demon_path, 'r') as f:
             self.demons = json.load(f)
@@ -65,11 +78,12 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         self.bm25 = BM25Okapi(tokenized_corpus)
         self.debug = debug
         if system_prompt is None:
-            system_prompt = DEFAULT_ATOMIZATION_PROMPT
+            system_prompt = DEFAULT_ATOMIZATION_PROMPTS[lang]
         self.system_prompt = system_prompt
         self.max_new_tokens = max_tokens
         self.temperature = temperature
         self.vllm_tqdm = vllm_tqdm
+        self.lora_request = lora_request
 
     def create_messages(self, example_queries, example_outputs, new_query):
         assert self.system_prompt is not None
@@ -94,6 +108,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         paragraphs = []
         for g in generation.split("\n"):
             pars = [para.strip() for para in g.split("    ") if len(para.strip()) > 0]
+            pars = [para for para in pars if para != '']
             paragraphs.extend(pars)
         if self.debug:
             logging.info(f"Splitting generation (len: {len(generation)}): {generation[:200]} ... {generation[200:]} ")

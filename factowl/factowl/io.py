@@ -9,6 +9,7 @@ def load_simple_json(p):
     df = pd.read_json(p)
     return df.topics.to_list(), df.generations.to_list()
 
+
 def load_json_generations(p):
     topics = []
     gens = []
@@ -17,9 +18,19 @@ def load_json_generations(p):
             doc = json.loads(line)
             t = doc["topic"]
             g = doc["output"]
+            if doc.get("annotations") is not None:
+                anns = doc["annotations"]
+                drop = True
+                for ann in anns:
+                    haf = ann.get("human-atomic-facts")
+                    if haf is not None and haf != "null":
+                        drop = False
 
-            topics.append(t)
-            gens.append(g)
+            else:
+                continue
+            if not drop:
+                topics.append(t)
+                gens.append(g)
     return topics, gens
 
 
@@ -69,15 +80,15 @@ def save_predictions(eval_dict, save_path, print_res=True):
             "context": json.dumps(fact_dict.get("context", []), ensure_ascii=False),
             "num_context_passages": len(fact_dict.get("context", []))
         }
+        if d.get("true_label") is not None:
+            d["true_label"] = d["true_label"]
         samples.append(d)
         if atom not in seen_atoms:
             dedup_samples.append(d)
 
             seen_atoms.add(atom)
-    score = sum(x["label"] for x in samples) / len(samples)
-    dedup_score = sum(x["label"] for x in dedup_samples) / len(dedup_samples)
 
-    num_facts = len(samples) # sum(len(x) for x in samples)
+    num_facts = len(samples)  # sum(len(x) for x in samples)
     # num_dedup_facts = sum(len(x) for x in dedup_samples)
     if print_res:
         print(f"Mean num facts in topics with at least 1 fact: {num_facts / len(unique_topics_w_atoms)}")
@@ -165,3 +176,47 @@ def json_docs2title_text_passages(docs):
             ps_d["title"] = f"{to}. {ti}"
         topic2psgs[to] = psgs
     return topic2psgs
+
+
+def load_json_atomic_facts_w_labels(p):
+    topics = []
+    atomic_facts = []
+    labels = []
+    with open(p, 'r', encoding="utf-8") as f:
+        docs = json.load(f)
+        for anns in docs:
+            topic_atomic_facts = []
+            topic_labels = []
+            if anns is not None:
+                for an in anns:
+                    # print(an)
+                    if an is None:
+                        afs = None
+                    else:
+                        afs = []
+                        if an.get("human-atomic-facts") is None:
+                            continue
+                        afs = [d["text"] for d in an["human-atomic-facts"] if d is not None]
+                        af_labels = [d["label"] for d in an["human-atomic-facts"] if d is not None]
+
+                        topic_atomic_facts.extend(afs)
+                        topic_labels.extend(af_labels)
+                    topic = an["topic"]
+            assert len(topic_atomic_facts) == len(topic_labels)
+            if len(topic_atomic_facts) == 0:
+                topic_atomic_facts = None
+                topic_labels = None
+            topics.append(topic)
+            atomic_facts.append(topic_atomic_facts)
+            labels.append(topic_labels)
+    assert len(topics) == len(atomic_facts) == len(labels)
+
+    return topics, atomic_facts, labels
+
+
+def load_lora_adapter_cfg(lora_weights_dir: str):
+    cfg_p = os.path.join(lora_weights_dir, "adapter_config.json")
+    with open(cfg_p, "r") as f:
+        lora_cfg = json.load(f)
+
+    return lora_cfg

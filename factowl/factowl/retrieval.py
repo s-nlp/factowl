@@ -3,11 +3,15 @@ import os
 import pickle as pkl
 import sqlite3
 import time
+from typing import List
+import jieba
+import requests
 
 import numpy as np
 from rank_bm25 import BM25Okapi
 from transformers import RobertaTokenizer
 from factowl.utils import retrieve_wikipedia_page, retrieve_multiple_wikipedia_pages
+import wikipedia
 
 SPECIAL_SEPARATOR = "####SPECIAL####SEPARATOR####"
 MAX_LENGTH = 256
@@ -112,10 +116,27 @@ class DocDB(object):
         return results
 
 
+def chinese_tokenize(text: str) -> List[str]:
+    return list(jieba.cut(text))
+
+
+def split_tokenize(text: str) -> List[str]:
+    return text.strip().split()
+
+
+LANG2TOKENIZE = {
+    "en": split_tokenize,
+    "ru": split_tokenize,
+    "zh": chinese_tokenize,
+    # "zh1": chinese_tokenize
+}
+
+
 class Retrieval(object):
 
     def __init__(self, db, cache_path, embed_cache_path, retrieval_type="gtr-t5-large", batch_size=None,
-                 device="cuda", page_search_mode: str = "single", context_type=None, context_num_pages: int = 1):
+                 device="cuda", page_search_mode: str = "single", context_type=None, context_num_pages: int = 1,
+                 use_this_topic2content_only=None, lang: str = "en"):
         assert context_type in ("db", "wikipedia_api")
         assert page_search_mode in ("single", "multi")
         if page_search_mode == "single":
@@ -143,6 +164,18 @@ class Retrieval(object):
             self.psg_tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
         self.page_search_mode = page_search_mode
         self.context_num_pages = context_num_pages
+        self.use_this_topic2content_only = use_this_topic2content_only
+        self.lang = lang
+        self.tokenize_fn = None
+        for lng in LANG2TOKENIZE.keys():
+            if lng in lang:
+
+                self.lang = lng
+                self.tokenize_fn = LANG2TOKENIZE[lng]
+                break
+        wikipedia.set_lang(self.lang)
+
+
 
     def load_encoder(self):
         from sentence_transformers import SentenceTransformer
@@ -157,9 +190,12 @@ class Retrieval(object):
         if doc is None:
             return passages
 
-        title = doc.title
-        cont = doc.content
-        lines = cont.split('\n')
+        try:
+            title = doc.title
+            cont = doc.content
+            lines = cont.split('\n')
+        except requests.exceptions.ConnectionError:
+            return []
 
         stop_sections = {"References", "See also", "External links", "Further reading", "Notes", "Citations", "Sources"}
         cur_section = ""
@@ -214,8 +250,11 @@ class Retrieval(object):
 
         if self.add_n_embed > 0:
             if os.path.exists(self.embed_cache_path):
-                with open(self.embed_cache_path, "rb") as f:
-                    new_cache = pkl.load(f)
+                try:
+                    with open(self.embed_cache_path, "rb") as f:
+                        new_cache = pkl.load(f)
+                except EOFError:
+                    return
                 self.embed_cache.update(new_cache)
 
             with open(self.embed_cache_path, "wb") as f:
@@ -226,16 +265,18 @@ class Retrieval(object):
             bm25 = self.embed_cache[topic]
         else:
             # if self.context_type == "db":
-            inputs = [psg["text"].replace("<s>", "").replace("</s>", "").split() for psg in passages]
+            inputs = [self.tokenize_fn(psg["text"].replace("<s>", "").replace("</s>", "")) for psg in passages]
             # elif self.context_type == "wikipedia_api":
             #     # assert isinstance(passages, str)
             #     inputs = [[f"{topic}. {p}", ] for p in passages]
             # else:
             #     raise RuntimeError(f"Invalid context_type: {self.context_type}")
             bm25 = BM25Okapi(inputs)
+
             self.embed_cache[topic] = bm25
             self.add_n_embed += 1
-        scores = bm25.get_scores(query.split())
+        scores = bm25.get_scores(self.tokenize_fn(query))
+
         indices = np.argsort(-scores)[:k]
         return [passages[i] for i in indices]
 
@@ -282,7 +323,11 @@ class Retrieval(object):
             self.cache[cache_key] = self.get_bm25_passages(topic, retrieval_query, passages, k, cache=cache)
         else:
             self.cache[cache_key] = self.get_gtr_passages(topic, retrieval_query, passages, k)
-        assert len(self.cache[cache_key]) in [k, len(passages)]
+        if not (len(self.cache[cache_key]) in [k, len(passages)]):
+            raise RuntimeError(f"Tried cache_key:{cache_key}, expected {k} or {len(passages)}.\n"
+                               f"> Passages: {len(passages)} {passages}\n"
+                               f"> Cached passages: {len(self.cache[cache_key])} {self.cache[cache_key]}")
+        # assert len(self.cache[cache_key]) in [k, len(passages)]
         self.add_n += 1
 
         return self.cache[cache_key]
@@ -301,9 +346,16 @@ class Retrieval(object):
         if isinstance(topic, str):
             retrieval_query = topic + " " + question.strip()
             cache_key = topic + "#" + retrieval_query
+            if not self.use_this_topic2content_only:
+                passages = passages_fn(topic, question, k)
+            else:
+                cxt = self.use_this_topic2content_only[topic]
+                passages = [{"title": topic, "text": x} for x in cxt.strip().split('</s>') if x.strip() != '']
 
-            passages = passages_fn(topic, question, k)
-            return self.rerank_passages(cache_key=cache_key,
+            if passages == []:
+                return passages
+            else:
+                return self.rerank_passages(cache_key=cache_key,
                                         topic=topic,
                                         retrieval_query=retrieval_query,
                                         passages=passages,

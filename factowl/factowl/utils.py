@@ -136,11 +136,12 @@ def wikipedia_flush_section(page_title, cur_section, cur_paras, res_list: List[D
         for p in reversed(merged_paras):
             res_list.append({"title": topic.strip(), "text": p})
 
-def retrieve_wikipedia_page(topic):
+def retrieve_wikipedia_page(topic, verbose=True):
     try:
         doc = wikipedia.page(topic, auto_suggest=False)
     except (PageError, DisambiguationError) as e:
-        logging.info(f"Wikipedia API: found no page for query {topic}. Trying to search...")
+        if verbose:
+            logging.info(f"Wikipedia API: found no page for query {topic}. Trying to search...")
         try:
             lst = wikipedia.search(topic)
             if len(lst) == 0:
