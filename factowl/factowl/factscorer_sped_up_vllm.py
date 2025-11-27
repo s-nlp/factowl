@@ -58,10 +58,10 @@ class FactScorerSpedUpVLLM(object):
                  retrieval_device: str = "cuda",
                  context_retrieval_type: str = "gtr-t5-large",
                  npm_retrieval_type: str = "bm25",
-                 context_type: str = "db",
+                 context_type: str = "wikipedia_api",
                  context_num_pages: int = 1,
                  n_npm_contexts: int = 3,
-                 num_supporting_contexts: int = 10,
+                 num_supporting_contexts: int = 5,
                  precomputed_passages=None,
                  concat_topic=False,
                  multifact_verification: bool = False,
@@ -71,7 +71,6 @@ class FactScorerSpedUpVLLM(object):
                  verbose=False,
                  lora_weights=None,
                  lang="en"
-
                  ):
         assert model_name in ["retrieval+llama", "retrieval+llama+npm", "retrieval+ChatGPT", "npm",
                               "retrieval+ChatGPT+npm"]
@@ -242,6 +241,8 @@ class FactScorerSpedUpVLLM(object):
                 if not a:
                     positions.append(i)
                     filt_generations.append(g)
+                else:
+                    print(f'Abstained {g}')
             # filt_generations = [g for g, a in zip(generations, abstains_list) if not a]
             filt_atomic_facts = self.af_generator.run_generations_list(filt_generations)
             assert len(filt_atomic_facts) == len(positions)
