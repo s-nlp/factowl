@@ -350,7 +350,8 @@ class Retrieval(object):
                 passages = passages_fn(topic, question, k)
             else:
                 cxt = self.use_this_topic2content_only[topic]
-                passages = [{"title": topic, "text": x} for x in cxt.strip().split('</s>') if x.strip() != '']
+                # passages = [{"title": topic, "text": x} for x in cxt.strip().split('</s>') if x.strip() != '']
+                passages = [{"title": topic, "text": x} for x in cxt]
 
             if passages == []:
                 return passages
