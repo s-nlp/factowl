@@ -19,9 +19,10 @@ DEFAULT_ATOMIZATION_PROMPTS = {"en": "You are an expert fact extraction and veri
                                      "1. Please read the following text carefully and break it down into distinct, independent facts.\n" \
                                      "2. For each fact, disambiguate it to ensure clarity and precision (e.g., replace ambiguous prepositions).\n" \
                                      "3. This text focuses on the entity <generation_topic>. When the text refers to this entity without explicit mention (e.g., replaced by pronouns or omitted), generated atomic facts must explicitly include the entity name <generation_topic>.\n" \
-                                     "4. Each fact should be written on its own line.\n" \
-                                     "5. Each line must start with a hyphen and space ('- ').\n" \
-                                     "6. Do not include any additional explanation or formatting - just the list of facts if there are any.\n",
+                                     "4. Exclude any atomic facts that do not mention or relate to the entity <generation_topic>.\n"
+                                     "5. Each fact should be written on its own line.\n" \
+                                     "6. Each line must start with a hyphen and space ('- ').\n" \
+                                     "7. Do not include any additional explanation or formatting - just the list of facts if there are any.\n",
                                # "zh": "你是一位专业的事实提取与验证助手。" \
                                #       "请仔细阅读以下文本，并将其分解为多个独立、互不依赖的事实。" \
                                #       "对每个事实进行消歧，以确保清晰和准确（例如，替换含义模糊的介词）。" \
