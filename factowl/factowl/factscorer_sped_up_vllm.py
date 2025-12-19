@@ -237,14 +237,17 @@ class FactScorerSpedUpVLLM(object):
             self.verbose = True
             positions = []
             filt_generations = []
-            for i, (g, a) in enumerate(zip(generations, abstains_list)):
+            filt_topics = []
+            for i, (top, g, a) in enumerate(zip(topics, generations, abstains_list)):
                 if not a:
                     positions.append(i)
+                    filt_topics.append(top)
                     filt_generations.append(g)
                 else:
                     print(f'Abstained {g}')
             # filt_generations = [g for g, a in zip(generations, abstains_list) if not a]
-            filt_atomic_facts = self.af_generator.run_generations_list(filt_generations)
+            filt_atomic_facts = self.af_generator.run_generations_list(generations=filt_generations,
+                                                                       topics=filt_topics)
             assert len(filt_atomic_facts) == len(positions)
             atomic_facts = [list() for _ in generations]
             for pos, afs in zip(positions, filt_atomic_facts):

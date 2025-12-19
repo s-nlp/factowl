@@ -15,22 +15,23 @@ from transformers import AutoTokenizer
 # Ensure required models are downloaded
 nltk.download("punkt")
 
-DEFAULT_ATOMIZATION_PROMPTS = {"en": "You are an expert fact extraction and verification assistant. " \
-                                     "Please read the following text carefully and break it down into distinct, independent facts. " \
-                                     "For each fact, disambiguate it to ensure clarity and precision (e.g., replace ambiguous prepositions). " \
-                                     "Each fact should be written on its own line. " \
-                                     "Each line must start with a hyphen and space ('- '). " \
-                                     "Do not include any additional explanation or formatting - just the list of facts if there are any.",
-                               "zh": "你是一位专业的事实提取与验证助手。" \
-                                     "请仔细阅读以下文本，并将其分解为多个独立、互不依赖的事实。" \
-                                     "对每个事实进行消歧，以确保清晰和准确（例如，替换含义模糊的介词）。" \
-                                     "每个事实应单独成行，每行必须以连字符和空格（‘- ’）开头。" \
-                                     "不要包含任何额外的解释或格式——如果有事实，请仅列出事实列表。",
-                               "zh1": "你是一位专业的事实提取与验证助手。请用中文进行回答。" \
-                                     "请仔细阅读以下文本，并将其分解为多个独立、互不依赖的事实。" \
-                                     "对每个事实进行消歧，以确保清晰和准确（例如，替换含义模糊的介词）。" \
-                                     "每个事实应单独成行，每行必须以连字符和空格（‘- ’）开头。" \
-                                     "不要包含任何额外的解释或格式——如果有事实，请仅列出事实列表。"
+DEFAULT_ATOMIZATION_PROMPTS = {"en": "You are an expert fact extraction and verification assistant.\n" \
+                                     "1. Please read the following text carefully and break it down into distinct, independent facts.\n" \
+                                     "2. For each fact, disambiguate it to ensure clarity and precision (e.g., replace ambiguous prepositions).\n" \
+                                     "3. This text focuses on the entity <generation_topic>. When the text refers to this entity without explicit mention (e.g., replaced by pronouns or omitted), generated atomic facts must explicitly include the entity name <generation_topic>.\n" \
+                                     "4. Each fact should be written on its own line.\n" \
+                                     "5. Each line must start with a hyphen and space ('- ').\n" \
+                                     "6. Do not include any additional explanation or formatting - just the list of facts if there are any.\n",
+                               # "zh": "你是一位专业的事实提取与验证助手。" \
+                               #       "请仔细阅读以下文本，并将其分解为多个独立、互不依赖的事实。" \
+                               #       "对每个事实进行消歧，以确保清晰和准确（例如，替换含义模糊的介词）。" \
+                               #       "每个事实应单独成行，每行必须以连字符和空格（‘- ’）开头。" \
+                               #       "不要包含任何额外的解释或格式——如果有事实，请仅列出事实列表。",
+                               # "zh1": "你是一位专业的事实提取与验证助手。请用中文进行回答。" \
+                               #       "请仔细阅读以下文本，并将其分解为多个独立、互不依赖的事实。" \
+                               #       "对每个事实进行消歧，以确保清晰和准确（例如，替换含义模糊的介词）。" \
+                               #       "每个事实应单独成行，每行必须以连字符和空格（‘- ’）开头。" \
+                               #       "不要包含任何额外的解释或格式——如果有事实，请仅列出事实列表。"
                                }
 
 
@@ -85,11 +86,14 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         self.vllm_tqdm = vllm_tqdm
         self.lora_request = lora_request
 
-    def create_messages(self, example_queries, example_outputs, new_query):
+    def create_messages(self, example_queries, example_outputs, new_query, new_query_topic):
         assert self.system_prompt is not None
         assert len(example_queries) == len(example_outputs)
+        assert new_query_topic is not None
+        sm = self.system_prompt
+        sm.replace("<generation_topic>", new_query_topic)
         messages = [
-            {"role": "system", "content": self.system_prompt},
+            {"role": "system", "content": sm},
             # {"role": "user", "content": para}
         ]
         for ex_q, ex_out in zip(example_queries, example_outputs):
@@ -116,16 +120,22 @@ class AtomicFactGeneratorSpedUpVLLM(object):
                 logging.info(f"\tSplitted paragraph: {p}")
         return self.get_atomic_facts_from_paragraph(paragraphs, cost_estimate=cost_estimate)
 
-    def run_generations_list(self, generations: List[str], cost_estimate=None):
+    def run_generations_list(self, generations: List[str], topics, cost_estimate=None):
         assert isinstance(generations, list), "Expected a list of generations"
+        assert len(generations) == len(topics), "Expected equal number of topics and generations"
         all_paragraphs = []
+        all_topics = []
         offsets = []
-        for gen in generations:
+
+        for topic, gen in zip(topics, generations):
             gen_paras = [p.strip() for p in gen.split("\n") if p.strip() != '']
+            gen_topics = [topic, ] * len(gen_paras)
             start_pos = len(all_paragraphs)
             end_pos = start_pos + len(gen_paras)
             offsets.append((start_pos, end_pos))
+
             all_paragraphs.extend(gen_paras)
+            all_topics.extend(gen_topics)
 
         if self.debug:
             logging.info(
@@ -135,7 +145,8 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         # ------------------------------------------------------------------------------------
         print(f"Starting fact generation")
         start_time = time.time()
-        atoms = self.get_init_atomic_facts_from_paragraphs(all_paragraphs, cost_estimate=cost_estimate)
+        atoms = self.get_init_atomic_facts_from_paragraphs(paragraphs=all_paragraphs, topics=all_topics,
+                                                           cost_estimate=cost_estimate)
         end_time = time.time()
 
         print(f"Fact generation took {end_time - start_time} seconds")
@@ -177,7 +188,8 @@ class AtomicFactGeneratorSpedUpVLLM(object):
             atomic_facts_pairs, para_breaks = postprocess_atomic_facts(atomic_facts_pairs, list(para_breaks), self.nlp)
         return atomic_facts_pairs, para_breaks
 
-    def get_init_atomic_facts_from_paragraphs(self, paragraphs, cost_estimate=None):
+    def get_init_atomic_facts_from_paragraphs(self, paragraphs, topics, cost_estimate=None):
+        assert len(paragraphs) == len(topics)
         is_bio = self.is_bio
         demons = self.demons
         k = 1 if is_bio else 0
@@ -186,7 +198,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         messages = []
         prompt_to_sent = {}
         atoms = {}
-        for para in paragraphs:
+        for t, para in zip(topics, paragraphs):
             if para in atoms:
                 continue
             top_machings = best_demos(para, self.bm25, list(demons.keys()), k)
@@ -202,7 +214,8 @@ class AtomicFactGeneratorSpedUpVLLM(object):
             example_outputs = [example_answer, ]
             new_query = para
 
-            prompt = self.create_messages(example_queries, example_outputs, new_query)
+            prompt = self.create_messages(example_queries, example_outputs, new_query,
+                                          new_query_topic=t)
 
             messages.append(prompt)
             # prompt_to_sent[prompt] = para
