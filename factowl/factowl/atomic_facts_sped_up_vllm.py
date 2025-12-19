@@ -92,7 +92,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         assert len(example_queries) == len(example_outputs)
         assert new_query_topic is not None
         sm = self.system_prompt
-        sm.replace("<generation_topic>", new_query_topic)
+        sm = sm.replace("<generation_topic>", new_query_topic)
         messages = [
             {"role": "system", "content": sm},
             # {"role": "user", "content": para}
