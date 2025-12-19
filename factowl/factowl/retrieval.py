@@ -349,9 +349,11 @@ class Retrieval(object):
             if not self.use_this_topic2content_only:
                 passages = passages_fn(topic, question, k)
             else:
-                cxt = self.use_this_topic2content_only[topic]
+                # cxt = self.use_this_topic2content_only[topic]
                 # passages = [{"title": topic, "text": x} for x in cxt.strip().split('</s>') if x.strip() != '']
-                passages = [{"title": topic, "text": x} for x in cxt]
+                # passages = [{"title": topic, "text": x} for x in cxt]
+                assert topic in self.use_this_topic2content_only, f"Topic {topic} not in the context"
+                passages = self.use_this_topic2content_only[topic]
 
             if passages == []:
                 return passages
