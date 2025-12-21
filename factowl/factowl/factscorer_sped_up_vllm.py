@@ -244,7 +244,8 @@ class FactScorerSpedUpVLLM(object):
                     filt_topics.append(top)
                     filt_generations.append(g)
                 else:
-                    print(f'Abstained {g}')
+                    pass
+                    # print(f'Abstained {g}')
             # filt_generations = [g for g, a in zip(generations, abstains_list) if not a]
             filt_atomic_facts = self.af_generator.run_generations_list(generations=filt_generations,
                                                                        topics=filt_topics)
