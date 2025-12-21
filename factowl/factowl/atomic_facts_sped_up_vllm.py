@@ -18,11 +18,19 @@ nltk.download("punkt")
 DEFAULT_ATOMIZATION_PROMPTS = {"en": "You are an expert fact extraction and verification assistant.\n" \
                                      "1. Please read the following text carefully and break it down into distinct, independent facts.\n" \
                                      "2. For each fact, disambiguate it to ensure clarity and precision (e.g., replace ambiguous prepositions).\n" \
-                                     "3. This text focuses on the entity <generation_topic>. When the text refers to this entity without explicit mention (e.g., replaced by pronouns or omitted), generated atomic facts must explicitly include the entity name <generation_topic>.\n" \
-                                     "4. Exclude any atomic facts that do not mention or relate to the entity <generation_topic>.\n"
+                                     "3. This text focuses on a single entity specified by the name below. When the text refers to this entity without explicit mention (e.g., replaced by pronouns or omitted), generated atomic facts must explicitly include the entity name.\n" \
+                                     "4. Exclude any atomic facts that do not mention or relate to the given entity.\n"
                                      "5. Each fact should be written on its own line.\n" \
                                      "6. Each line must start with a hyphen and space ('- ').\n" \
                                      "7. Do not include any additional explanation or formatting - just the list of facts if there are any.\n",
+                                # "en": "You are an expert fact extraction and verification assistant.\n" \
+                                #      "1. Please read the following text carefully and break it down into distinct, independent facts.\n" \
+                                #      "2. For each fact, disambiguate it to ensure clarity and precision (e.g., replace ambiguous prepositions).\n" \
+                                #      "3. This text focuses on the entity <generation_topic>. When the text refers to this entity without explicit mention (e.g., replaced by pronouns or omitted), generated atomic facts must explicitly include the entity name <generation_topic>.\n" \
+                                #      "4. Exclude any atomic facts that do not mention or relate to the entity <generation_topic>.\n"
+                                #      "5. Each fact should be written on its own line.\n" \
+                                #      "6. Each line must start with a hyphen and space ('- ').\n" \
+                                #      "7. Do not include any additional explanation or formatting - just the list of facts if there are any.\n",
                                # "zh": "你是一位专业的事实提取与验证助手。" \
                                #       "请仔细阅读以下文本，并将其分解为多个独立、互不依赖的事实。" \
                                #       "对每个事实进行消歧，以确保清晰和准确（例如，替换含义模糊的介词）。" \
@@ -34,6 +42,39 @@ DEFAULT_ATOMIZATION_PROMPTS = {"en": "You are an expert fact extraction and veri
                                #       "每个事实应单独成行，每行必须以连字符和空格（‘- ’）开头。" \
                                #       "不要包含任何额外的解释或格式——如果有事实，请仅列出事实列表。"
                                }
+
+
+SAMPLE_PROMPT_TEMPLATE="Entity: <sample_topic>\nText:\n<sample_text>\n"
+FACT_GENERATION_EXAMPLES = [
+    {"topic": "Mike McCoy",
+        "query": "During his professional career, McCoy played for the Broncos, the San Diego Chargers, "
+        "the Minnesota Vikings, and the Jacksonville Jaguars.",
+        "facts": ["Mike McCoy played for the Broncos.",
+                "Mike McCoy played for the Broncos during his professional career.",
+                "Mike McCoy played for the San Diego Chargers.",
+                "Mike McCoy played for the San Diego Chargers during his professional career.",
+                "Mike McCoy played for the Minnesota Vikings.",
+                "Mike McCoy played for the Minnesota Vikings during his professional career.",
+                "Mike McCoy played for the Jacksonville Jaguars.",
+                "Mike McCoy played for the Jacksonville Jaguars during his professional career.",
+        ]
+    }, 
+    {
+        "topic": "Charles J. Faulkner",
+        "query": "He began practicing law in Romney, West Virginia and was elected to the "
+        "Virginia House of Delegates in 1823, where he served until 1827.",
+        "facts": [
+            "Charles J. Faulkner began practicing law in Romney, West Virginia.",
+            "Charles J. Faulkner was elected to the Virginia House of Delegates.",
+            "Charles J. Faulkner was elected to the Virginia House of Delegates in 1823.",
+            "Charles J. Faulkner served in the Virginia House of Delegates.",
+            "Charles J. Faulkner served in the Virginia House of Delegates until 1827."
+        ]
+    }
+]
+
+
+
 
 
 class VLLMGenerator:
@@ -87,23 +128,36 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         self.vllm_tqdm = vllm_tqdm
         self.lora_request = lora_request
 
-    def create_messages(self, example_queries, example_outputs, new_query, new_query_topic):
+    # def create_messages(self, example_queries, example_outputs, new_query, new_query_topic):
+    def create_messages(self, new_query, new_query_topic):
         assert self.system_prompt is not None
-        assert len(example_queries) == len(example_outputs)
+        # assert len(example_queries) == len(example_outputs)
         assert new_query_topic is not None
+
+        example_outputs = FACT_GENERATION_EXAMPLES
         sm = self.system_prompt
-        sm = sm.replace("<generation_topic>", new_query_topic)
+        # sm = sm.replace("<generation_topic>", new_query_topic)
         messages = [
             {"role": "system", "content": sm},
             # {"role": "user", "content": para}
         ]
-        for ex_q, ex_out in zip(example_queries, example_outputs):
-            q_d = {"role": "user", "content": ex_q}
-            out_d = {"role": "assistant", "content": ex_out}
+
+
+        for example_d in example_outputs:
+            ex_t = example_d["topic"]
+            ex_q = example_d["query"]
+            ex_fs = example_d["facts"]
+            s = SAMPLE_PROMPT_TEMPLATE.replace("<sample_topic>", ex_t).replace("<sample_text>", ex_q)
+            facts_s = '\n'.join((f"- {y}" for y in ex_fs))
+            facts_s += '\n'
+            
+            q_d = {"role": "user", "content": s}
+            out_d = {"role": "assistant", "content": facts_s}
 
             messages.append(q_d)
             messages.append(out_d)
-        new_q_d = {"role": "user", "content": new_query}
+        new_query_s = SAMPLE_PROMPT_TEMPLATE.replace("<sample_topic>", new_query).replace("<sample_text>", new_query_topic)
+        new_q_d = {"role": "user", "content": new_query_s}
         messages.append(new_q_d)
 
         return messages
@@ -202,21 +256,22 @@ class AtomicFactGeneratorSpedUpVLLM(object):
         for t, para in zip(topics, paragraphs):
             if para in atoms:
                 continue
-            top_machings = best_demos(para, self.bm25, list(demons.keys()), k)
-            keys = set(list(demons.keys()) + top_machings)
-            values = [demons[key] for key in keys]
+            # top_machings = best_demos(para, self.bm25, list(demons.keys()), k)
+            # keys = set(list(demons.keys()) + top_machings)
+            # values = [demons[key] for key in keys]
 
-            example_text = " ".join(keys)
-            example_answer = ""
-            for lst in values:
-                example_answer += ''.join(f"- {x}\n" for x in lst)
+            # example_text = " ".join(keys)
+            # example_answer = ""
+            # for lst in values:
+            #     example_answer += ''.join(f"- {x}\n" for x in lst)
 
-            example_queries = [example_text, ]
-            example_outputs = [example_answer, ]
+            # example_queries = [example_text, ]
+            # example_outputs = [example_answer, ]
             new_query = para
 
-            prompt = self.create_messages(example_queries, example_outputs, new_query,
-                                          new_query_topic=t)
+            # prompt = self.create_messages(example_queries, example_outputs, new_query,
+            #                               new_query_topic=t)
+            prompt = self.create_messages(new_query=new_query, new_query_topic=t)
 
             messages.append(prompt)
             # prompt_to_sent[prompt] = para
