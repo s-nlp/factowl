@@ -156,7 +156,7 @@ class AtomicFactGeneratorSpedUpVLLM(object):
 
             messages.append(q_d)
             messages.append(out_d)
-        new_query_s = SAMPLE_PROMPT_TEMPLATE.replace("<sample_topic>", new_query).replace("<sample_text>", new_query_topic)
+        new_query_s = SAMPLE_PROMPT_TEMPLATE.replace("<sample_topic>", new_query_topic).replace("<sample_text>", new_query)
         new_q_d = {"role": "user", "content": new_query_s}
         messages.append(new_q_d)
 
