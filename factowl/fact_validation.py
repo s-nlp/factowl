@@ -179,10 +179,10 @@ def validate_facts(input_tsv, long_output_file, clean_output_file, vllm_model, t
 
     # Save results
     print(f"Saving long results to {long_output_file}")
-    df.to_csv(long_output_file, index=False)
+    df.to_csv(long_output_file, sep='\t', index=False)
     clean_df = df[df["is_good"]]
     clean_df["sample_id"] = list(range(clean_df.shape[0]))
-    clean_df[["sample_id","topic","atom","is_supported","label"]].to_csv(clean_output_file, index=False)
+    clean_df[["sample_id","topic","atom","is_supported","label"]].to_csv(clean_output_file, sep='\t', index=False)
 
     # Print summary
     total_processed = len(valid_indices)
