@@ -25,6 +25,7 @@ from .utils import (
     retrieve_multiple_wikipedia_pages,
     parse_wikipedia_page_content,
 )
+from .fact_validation import validate_facts
 
 __all__ = [
     # Core classes
@@ -36,6 +37,7 @@ __all__ = [
     "Retrieval",
     # Utility functions
     "remove_citation",
+    "validate_facts",
     "is_invalid_ppl",
     "is_invalid_paragraph_ppl",
     "perplexity_ai_abstain_detect",
