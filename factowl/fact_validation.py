@@ -200,3 +200,5 @@ def validate_facts(input_tsv, long_output_file, clean_output_file, vllm_model, t
     print(f"Long output saved to: {long_output_file}")
     print(f"Clean output saved to: {clean_output_file}")
 
+    return df
+
