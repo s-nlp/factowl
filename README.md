@@ -1,7 +1,5 @@
 # FactOwl: Blazingly fast and modern factchecker
 
-See more on [https://s-nlp.github.io/factowl/](https://s-nlp.github.io/factowl/)
-
 ## Usage Examples
 
 1. [Fact generation and verification using pre-computed contexts](https://github.com/s-nlp/factowl/blob/main/examples/eval_no_retrieve.ipynb) only on RiDiC dataset
