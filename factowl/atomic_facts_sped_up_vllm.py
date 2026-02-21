@@ -322,15 +322,26 @@ def best_demos(query, bm25, demons_sents, k):
 def text_to_sentences(text):
     if isinstance(text, tuple):
         raise RuntimeError(f"Error. text_to_sentences got input\n:{text}")
-    # text = text.split('\n\n')[0]
-    # sentences = text.split("- ")[1:]
-    sentences = [x.strip('-').strip() for x in text.split('\n') if x.startswith('- ') and x.strip('-').strip() != '']
-    # sentences = [sent.strip()[:-1] if sent.strip()[-1] == '\n' else sent.strip() for sent in sentences]
-    if len(sentences) > 0:
-        if sentences[-1][-1] != '.':
-            sentences[-1] = sentences[-1] + '.'
-    else:
-        sentences = []
+
+    # handles "- x", "- - x", ignores "- "
+    ATOM_LINE_RE = re.compile(r"^\s*(?:[-*]\s+|\d+[.)]\s+)\s*(.*\S)\s*$")
+
+    sentences = []
+    for ln in (text or "").splitlines():
+        m = ATOM_LINE_RE.match(ln)
+        if not m:
+            continue
+        s = m.group(1).strip()
+        if not s:
+            continue
+        # normalize NONE variants
+        s_upper = s.strip().upper().rstrip(".")
+        if s_upper in {"NONE", "NO FACTS", "N/A"}:
+            continue
+        sentences.append(s)
+
+    if sentences and sentences[-1][-1] != ".":
+        sentences[-1] += "."
     return sentences
 
 
