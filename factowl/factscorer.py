@@ -326,6 +326,8 @@ class FactowlFactScorer(object):
                                                         decisions_fname=decisions_fname)
         save_dir = os.path.dirname(save_path)
         save_fname = os.path.basename(save_path)
+        if not os.path.exists(save_dir) and save_dir != '':
+            os.makedirs(save_dir)
 
         f_p = os.path.join(save_dir, f"facts_{save_fname}")
         save_predictions(eval_dict, f_p, print_res=False)
