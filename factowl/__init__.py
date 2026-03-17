@@ -1,8 +1,8 @@
 __version__ = "0.2.3"
 
-from .factscorer_sped_up_vllm import FactScorerSpedUpVLLM
-from .atomic_facts_sped_up_vllm import AtomicFactGeneratorSpedUpVLLM, VLLMGenerator
-from .clm_vllm import FactVerificatorSpedUpVLLM
+from .factscorer import FactowlFactScorer
+from .atomic_facts import AtomicFactGenerator, VLLMGenerator
+from .clm_vllm import FactVerificator
 from .retrieval import DocDB, Retrieval
 from .abstain_detection import (
     remove_citation,
@@ -29,10 +29,10 @@ from .fact_validation import validate_facts
 
 __all__ = [
     # Core classes
-    "FactScorerSpedUpVLLM",
-    "AtomicFactGeneratorSpedUpVLLM",
+    "FactowlFactScorer",
+    "AtomicFactGenerator",
     "VLLMGenerator",
-    "FactVerificatorSpedUpVLLM",
+    "FactVerificator",
     "DocDB",
     "Retrieval",
     # Utility functions
