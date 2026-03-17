@@ -8,11 +8,62 @@ Usage:
 """
 
 import argparse
+import logging
+import os.path
 import sys
 from pathlib import Path
 
 import pandas as pd
 from tqdm import tqdm
+
+
+def filter_save_fact(inp_p, out_long_p, out_p, vllm_model, tokenizer,
+                     vllm_sampling_params, claim_column='atom', num_examples=10):
+    # LLM-based atomic fact filtration
+    for fname in os.listdir(base_input_dir):
+        if not fname.endswith('tsv'):
+            continue
+        inp_p = os.path.join(base_input_dir, fname)
+        out_long_p = os.path.join(base_out_long_dir, fname)
+        out_p = os.path.join(base_out_dir, fname)
+        bad_p = os.path.join(bad_out_dir, fname)
+
+        labeled_df = validate_facts(inp_p, out_long_p, out_p, vllm_model, tokenizer,
+                                    vllm_sampling_params, claim_column=claim_column, num_examples=num_examples)
+        labeled_df["is_good"] = labeled_df["is_good"].astype(bool)
+        # labeled_df = pd.DataFrame()
+        labeled_df.drop(columns=["is_good", ], inplace=True)
+
+        base_out_dir_w_trg_ent = "./filtered_facts_w_target_entity"
+        bad_facts_out_dir = "./bad_facts_no_target_entity"
+        if not os.path.exists(base_out_dir_w_trg_ent):
+            os.makedirs(base_out_dir_w_trg_ent)
+        if not os.path.exists(bad_facts_out_dir):
+            os.makedirs(bad_facts_out_dir)
+
+        if not fname.endswith('tsv'):
+            continue
+        in_p = os.path.join(base_out_dir, fname)
+        out_p2 = os.path.join(base_out_dir_w_trg_ent, fname)
+        bad_p = os.path.join(bad_facts_out_dir, fname)
+
+        df = pd.read_csv(in_p, sep='\t')
+        print(f"Path: {out_p}")
+        print(f"BEFORE: {df.shape}")
+        # Target entity must be mentioned in an atomic fact explicitly
+        df["keep_flag"] = df.apply(lambda row: str(row["topic"]) in row["atom"], axis=1)
+        good_df = df[df["keep_flag"]]
+        bad_df = df[~df["keep_flag"]]
+
+        good_df[["sample_id", "topic", "atom", "is_supported", "label"]].to_csv(out_p2,
+                                                                                sep='\t',
+                                                                                index=False)
+        bad_df[["sample_id", "topic", "atom", "is_supported", "label"]].to_csv(bad_p,
+                                                                               sep='\t',
+                                                                               index=False)
+        print(f"AFTER: {good_df.shape}")
+        print(f"Bad facts: {bad_df.shape}")
+        print('---')
 
 
 def get_few_shot_examples():
@@ -138,6 +189,72 @@ def process_outputs(outputs):
     return processed, clean_labels, is_good
 
 
+def filter_save_facts(input_tsv, clean_output_file, vllm_model, tokenizer, vllm_sampling_params,
+                      claim_column='atom', num_examples=10):
+    out_dir = os.path.dirname(clean_output_file)
+    if not os.path.dirname() != out_dir and out_dir != '':
+        os.makedirs(out_dir)
+
+    df = pd.read_csv(input_tsv, sep='\t')
+
+    # Create prompts
+    logging.info("Filtering facts...")
+    prompts = []
+    for _, row in tqdm(df.iterrows(), total=len(df), mininterval=8.0):
+        claim = row[claim_column]
+        if pd.notna(claim):  # Skip NaN values
+            prompt = create_prompt(claim, tokenizer, num_examples)
+            prompts.append(prompt)
+        else:
+            prompts.append("")  # Placeholder for NaN
+
+    df['primed_text'] = prompts
+
+    # Filter out empty prompts for generation
+    valid_indices = [i for i, p in enumerate(prompts) if p]
+    valid_prompts = [prompts[i] for i in valid_indices]
+
+    # Generate responses
+    outputs = vllm_model.generate(valid_prompts, vllm_sampling_params)
+
+    # Process outputs
+    processed, clean_labels, is_good = process_outputs(outputs)
+
+    # Map results back to dataframe (accounting for NaN values)
+    df['out'] = ""
+    df['out_clean'] = ""
+    df['is_good'] = None
+
+    for idx, orig_idx in enumerate(valid_indices):
+        df.loc[orig_idx, 'out'] = processed[idx]
+        df.loc[orig_idx, 'out_clean'] = clean_labels[idx]
+        df.loc[orig_idx, 'is_good'] = is_good[idx]
+
+    # Save results
+    clean_df = df[df["is_good"]]
+    clean_df["sample_id"] = list(range(clean_df.shape[0]))
+    clean_df["keep_flag"] = clean_df.apply(lambda row: str(row["topic"]) in row["atom"], axis=1)
+    clean_df = df[df["keep_flag"]]
+
+    clean_df[["sample_id", "topic", "atom", "is_supported", "label"]].to_csv(clean_output_file, sep='\t', index=False)
+
+    # Print summary
+    total_processed = len(valid_indices)
+    total_good = sum(is_good)
+    total_bad = total_processed - total_good
+
+    logging.info("Finished fact filtration. Summary:")
+    logging.info("=" * 50)
+    logging.info(f"Total rows: {len(df)}")
+    logging.info(f"Processed: {total_processed}")
+    logging.info(f"Skipped (NaN): {len(df) - total_processed}")
+    logging.info(f"GOOD facts: {total_good} ({total_good / total_processed * 100:.1f}%)")
+    logging.info(f"BAD: {total_bad} ({total_bad / total_processed * 100:.1f}%)")
+    logging.info(f"Clean output saved to: {clean_output_file}")
+
+    return df
+
+
 def validate_facts(input_tsv, long_output_file, clean_output_file, vllm_model, tokenizer, vllm_sampling_params,
                    claim_column='atom', num_examples=10):
     df = pd.read_csv(input_tsv, sep='\t')
@@ -182,7 +299,7 @@ def validate_facts(input_tsv, long_output_file, clean_output_file, vllm_model, t
     df.to_csv(long_output_file, sep='\t', index=False)
     clean_df = df[df["is_good"]]
     clean_df["sample_id"] = list(range(clean_df.shape[0]))
-    clean_df[["sample_id","topic","atom","is_supported","label"]].to_csv(clean_output_file, sep='\t', index=False)
+    clean_df[["sample_id", "topic", "atom", "is_supported", "label"]].to_csv(clean_output_file, sep='\t', index=False)
 
     # Print summary
     total_processed = len(valid_indices)
@@ -201,4 +318,3 @@ def validate_facts(input_tsv, long_output_file, clean_output_file, vllm_model, t
     print(f"Clean output saved to: {clean_output_file}")
 
     return df
-

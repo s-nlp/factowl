@@ -103,7 +103,7 @@ class VLLMGenerator:
                                    # lora_request=self.lora_request)
 
 
-class AtomicFactGeneratorSpedUpVLLM(object):
+class AtomicFactGenerator(object):
     def __init__(self, demon_dir, vllm_model, model_name, is_bio=False, debug=False,
                  system_prompt=None, max_tokens: int = 2048, temperature: float = 0.,
                  vllm_tqdm=False, lang: str = "en", lora_request=None):
@@ -141,7 +141,6 @@ class AtomicFactGeneratorSpedUpVLLM(object):
             {"role": "system", "content": sm},
             # {"role": "user", "content": para}
         ]
-
 
         for example_d in example_outputs:
             ex_t = example_d["topic"]

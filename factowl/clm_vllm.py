@@ -104,7 +104,7 @@ Atomic fact labels:
 """
 
 
-class FactVerificatorSpedUpVLLM(object):
+class FactVerificator(object):
     def __init__(self, vllm_model, model_name, is_bio=False, debug=False,
                  system_prompt=None, query_prompt_template=None, max_tokens: int = 1024, temperature: float = 0.,
                  context_type="db", vllm_tqdm=False, lang: str = "en", lora_request=None):
