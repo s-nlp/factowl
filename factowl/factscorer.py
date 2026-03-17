@@ -161,9 +161,9 @@ class FactowlFactScorer(object):
         bfgs = "-bfg" if self.batched_fact_generation else ''
 
         cache_path = os.path.join(self.cache_dir,
-                                  f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}{fps}{bfgs}.json")
+                                  f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}{bfgs}.json")
         embed_cache_path = os.path.join(self.cache_dir,
-                                        f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}{fps}{bfgs}.pkl")
+                                        f"retrieval-{name}-{self.cxt_type}-p{self.cxt_n_pages}-c{self.n_support_cxt}{self.extr_ps}{bfgs}.pkl")
         self.db[name] = None
         if self.cxt_type == "db":
             self.db[name] = DocDB(db_path=db_path, data_path=data_path)
