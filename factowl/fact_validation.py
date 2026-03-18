@@ -235,7 +235,7 @@ def filter_save_facts(input_tsv, clean_output_file, vllm_model, tokenizer, vllm_
     clean_df = df[df["is_good"]]
     clean_df["sample_id"] = list(range(clean_df.shape[0]))
     clean_df["keep_flag"] = clean_df.apply(lambda row: str(row["topic"]) in row["atom"], axis=1)
-    clean_df = df[df["keep_flag"]]
+    clean_df = clean_df[clean_df["keep_flag"]]
 
     clean_df[["sample_id", "topic", "atom", "is_supported", "label"]].to_csv(clean_output_file, sep='\t', index=False)
 
