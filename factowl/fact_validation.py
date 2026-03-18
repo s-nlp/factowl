@@ -196,7 +196,7 @@ def filter_save_facts(input_tsv, clean_output_file, vllm_model, tokenizer, vllm_
         os.makedirs(out_dir)
 
     df = pd.read_csv(input_tsv, sep='\t')
-    df.dropna(inplace=True)
+    df.dropna(inplace=True, subset=[claim_column, ])
 
     # Create prompts
     logging.info("Filtering facts...")
