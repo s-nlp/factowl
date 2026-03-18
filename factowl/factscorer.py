@@ -337,7 +337,7 @@ class FactowlFactScorer(object):
 
         if self.filter_facts:
             ff_p = os.path.join(save_dir, f"filtered_facts_{save_fname}")
-            filter_save_facts(f_p, ff_p, vllm_model=self.vllm_model, tokenizer=self.tokenizer,
+            filter_save_facts(f_p, ff_p, vllm_model=self.vllm_model, tokenizer=self.vllm_verifier.tokenizer,
                               vllm_sampling_params=self.af_generator.vllm.sampling_params,
                               claim_column='atom', num_examples=10)
 
