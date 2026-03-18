@@ -192,7 +192,7 @@ def process_outputs(outputs):
 def filter_save_facts(input_tsv, clean_output_file, vllm_model, tokenizer, vllm_sampling_params,
                       claim_column='atom', num_examples=10):
     out_dir = os.path.dirname(clean_output_file)
-    if not os.path.dirname() != out_dir and out_dir != '':
+    if not os.path.exists(out_dir) and out_dir != '':
         os.makedirs(out_dir)
 
     df = pd.read_csv(input_tsv, sep='\t')
