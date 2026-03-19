@@ -232,7 +232,7 @@ def filter_save_facts(input_tsv, clean_output_file, vllm_model, tokenizer, vllm_
         df.loc[orig_idx, 'is_good'] = is_good[idx]
 
     # Save results
-    clean_df = df[df["is_good"]]
+    clean_df = df[df["is_good"]].copy()
     clean_df["sample_id"] = list(range(clean_df.shape[0]))
     clean_df["keep_flag"] = clean_df.apply(lambda row: str(row["topic"]) in row["atom"], axis=1)
     clean_df = clean_df[clean_df["keep_flag"]]
