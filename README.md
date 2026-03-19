@@ -2,9 +2,9 @@
 
 ## Usage Examples
 
-1. [Fact generation and verification using pre-computed contexts](https://github.com/s-nlp/factowl/blob/main/examples/eval_no_retrieve.ipynb) only on RiDiC dataset
+1. [Fact generation and verification using pre-computed contexts](https://github.com/s-nlp/factowl/blob/main/examples/eval_no_retrieve_ridic_hf.ipynb) only on RiDiC dataset
 
-2. [Fact generation and verification on FactScore dataset](https://github.com/s-nlp/factowl/blob/main/examples/factowl_example.ipynb) usign either fixed Wikipedia dump or Wikipedia search for context retrieval
+2. [Fact generation and verification on FactScore dataset](https://github.com/s-nlp/factowl/blob/main/examples/eval_factowl_factscore_data.ipynb) usign either fixed Wikipedia dump or Wikipedia search for context retrieval
 
 3. LLM and rule-based [fact filtration](https://github.com/s-nlp/factowl/blob/main/examples/filter_facts.ipynb)
 
