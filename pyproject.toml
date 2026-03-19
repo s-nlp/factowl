@@ -31,6 +31,8 @@ dependencies = [
   "transformers==4.52.4",
   "vllm==0.9.1",
   "wikipedia==1.4.0",
+  "wikipedia",
+  "jieba",
   "rank-bm25==0.2.2"
 ]
 
