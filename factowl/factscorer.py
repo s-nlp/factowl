@@ -329,15 +329,15 @@ class FactowlFactScorer(object):
         if not os.path.exists(save_dir) and save_dir != '':
             os.makedirs(save_dir)
 
-        f_p = os.path.join(save_dir, f"facts_{save_fname}")
-        save_predictions(eval_dict, f_p, print_res=False)
+        # f_p = os.path.join(save_dir, f"facts_{save_fname}")
+        save_predictions(eval_dict, save_path, print_res=False)
 
-        e_p = os.path.join(save_dir, f"eval_{save_fname}")
+        e_p = os.path.join(save_dir, f"eval_results_{save_fname}")
         save_eval_results(eval_dict, e_p)
 
         if self.filter_facts:
-            ff_p = os.path.join(save_dir, f"filtered_facts_{save_fname}")
-            filter_save_facts(f_p, ff_p, vllm_model=self.vllm_model, tokenizer=self.vllm_verifier.tokenizer,
+            # ff_p = os.path.join(save_dir, f"filtered_facts_{save_fname}")
+            filter_save_facts(save_path, save_path, vllm_model=self.vllm_model, tokenizer=self.vllm_verifier.tokenizer,
                               vllm_sampling_params=self.af_generator.vllm.sampling_params,
                               claim_column='atom', num_examples=10)
 
