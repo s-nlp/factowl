@@ -194,7 +194,7 @@ class FactowlFactScorer(object):
     def get_score(self,
                   topics,
                   generations,
-                  save_path,
+                  save_path="results/facts.tsv",
                   gamma=10,
                   all_atomic_facts=None,
                   knowledge_source=None,
