@@ -36,9 +36,9 @@ def check_russian_fact_label(gen):
 
 VERIFICATION_FNS_DICT = {
     "en": check_english_fact_label,
-    "zh": check_chinese_fact_label,
+    # "zh": check_chinese_fact_label,
     "ru": check_russian_fact_label,
-    "zh1": check_english_fact_label,
+    "zh": check_english_fact_label,
 }
 
 
