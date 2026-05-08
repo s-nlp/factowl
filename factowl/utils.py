@@ -10,6 +10,7 @@ import nltk
 import torch
 import wikipedia
 from wikipedia import PageError, DisambiguationError
+import json
 
 
 def assert_all_approx_close(a, b, rtol, atol, count):
@@ -160,6 +161,10 @@ def retrieve_wikipedia_page(topic, verbose=True):
                 return doc
             except (PageError, DisambiguationError) as e:
                 pass
+    except json.decoder.JSONDecodeError as e:
+        logging.info(f"Failed parsing Wikipedia search results for {topic}. Ignoring entity...")
+        return None
+
 
     return doc
 
