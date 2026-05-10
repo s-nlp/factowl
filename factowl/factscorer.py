@@ -152,6 +152,8 @@ class FactowlFactScorer(object):
         self.verification_label_fn = VERIFICATION_FNS_DICT[lang]
         self.verbose = verbose
         self.log_timing = log_timing
+        if self.log_timing:
+            self.t_retrieval_total, self.t_fact_verif_total = 0., 0.
 
         # self.torch_compile = torch_compile
 
@@ -203,6 +205,9 @@ class FactowlFactScorer(object):
                   all_atomic_facts=None,
                   knowledge_source=None,
                   verbose=True):
+        if self.log_timing:
+            self.t_retrieval_total, self.t_fact_verif_total = 0., 0.
+        
 
         if all_atomic_facts is not None:
             assert len(topics) == len(all_atomic_facts), "`topics` and `atomic_facts` should have the same length"
@@ -345,6 +350,10 @@ class FactowlFactScorer(object):
             filter_save_facts(save_path, save_path, vllm_model=self.vllm_model, tokenizer=self.vllm_verifier.tokenizer,
                               vllm_sampling_params=self.af_generator.vllm.sampling_params,
                               claim_column='atom', num_examples=10)
+        if self.log_timing:
+            logging.info(f"Retrieval took {self.t_retrieval_total:.4f} seconds," # type: ignore
+                         f"fact verification took {self.t_fact_verif_total:.4f}.") # type: ignore
+
 
         return eval_dict
 
@@ -481,8 +490,8 @@ class FactowlFactScorer(object):
         decisions = []
         total_words = 0
         prompts = []
-        if self.log_timing:
-            t_retrieval_total, t_fact_verif_total = 0., 0.
+        # if self.log_timing:
+        #     t_retrieval_total, t_fact_verif_total = 0., 0.
 
         for atom in atomic_facts:
             atom = atom.strip()
@@ -490,7 +499,7 @@ class FactowlFactScorer(object):
                 t0 = time.perf_counter()
                 passages = self.retrieval[knowledge_source].get_passages(topic, atom, k=self.n_support_cxt)
                 t1 = time.perf_counter()
-                t_retrieval_total += t1 - t0 # type: ignore
+                self.t_retrieval_total += t1 - t0 # type: ignore
             else:
                 passages = self.retrieval[knowledge_source].get_passages(topic, atom, k=self.n_support_cxt)
             if self.precomputed_passages is not None:
@@ -518,14 +527,10 @@ class FactowlFactScorer(object):
             outputs = self.vllm_verifier.generate(prompts)
             gen_texts = [o.outputs[0].text for o in outputs]
             t1 = time.perf_counter()
-            t_fact_verif_total += t1 - t0 # type: ignore
+            self.t_fact_verif_total += t1 - t0 # type: ignore
         else:
             outputs = self.vllm_verifier.generate(prompts)
             gen_texts = [o.outputs[0].text for o in outputs]
-        if self.log_timing:
-            logging.info(f"Retrieval took {t_retrieval_total:.4f} seconds," # type: ignore
-                         f"fact verification took {t_fact_verif_total:.4f}.") # type: ignore
-
 
         assert len(gen_texts) == len(atomic_facts)
         for gen, atom in zip(gen_texts, atomic_facts):
