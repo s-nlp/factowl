@@ -351,8 +351,8 @@ class FactowlFactScorer(object):
                               vllm_sampling_params=self.af_generator.vllm.sampling_params,
                               claim_column='atom', num_examples=10)
         if self.log_timing:
-            logging.info(f"Retrieval took {self.t_retrieval_total:.4f} seconds," # type: ignore
-                         f"fact verification took {self.t_fact_verif_total:.4f}.") # type: ignore
+            logging.info(f"Retrieval took {self.t_retrieval_total:.4f} seconds, " # type: ignore
+                         f"fact verification took {self.t_fact_verif_total:.4f} seconds.") # type: ignore
 
 
         return eval_dict
