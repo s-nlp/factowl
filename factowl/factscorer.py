@@ -207,6 +207,7 @@ class FactowlFactScorer(object):
                   verbose=True):
         if self.log_timing:
             self.t_retrieval_total, self.t_fact_verif_total = 0., 0.
+            t1 = time.perf_counter()
         
 
         if all_atomic_facts is not None:
@@ -351,7 +352,11 @@ class FactowlFactScorer(object):
                               vllm_sampling_params=self.af_generator.vllm.sampling_params,
                               claim_column='atom', num_examples=10)
         if self.log_timing:
-            logging.info(f"Retrieval took {self.t_retrieval_total:.4f} seconds, " # type: ignore
+            t2 = time.perf_counter()
+            t_total = t2 - t1
+
+            logging.info(f"Time total: {t_total:.4f} seconds"
+                        f"Retrieval took {self.t_retrieval_total:.4f} seconds, \n" # type: ignore
                          f"fact verification took {self.t_fact_verif_total:.4f} seconds.") # type: ignore
 
 
