@@ -162,6 +162,7 @@ class Retrieval(object):
         self.psg_tokenizer = None
         if context_type == "wikipedia_api":
             self.psg_tokenizer = RobertaTokenizer.from_pretrained("roberta-large")
+            wikipedia.set_user_agent("MyProjectName/1.0 (contact@example.com)")
         self.page_search_mode = page_search_mode
         self.context_num_pages = context_num_pages
         self.use_this_topic2content_only = use_this_topic2content_only
