@@ -42,7 +42,7 @@ Install the latest stable release directly from PyPI:
 pip install factowl
 ```
 
-### Option 2: Development Setup (For Contributors & Researchers)
+### Option 2: Development Setup 
 To run the full pipeline, including local Wikipedia dump indexing and Jupyter notebooks:
 
 ```bash
@@ -57,13 +57,12 @@ conda activate factowl
 # 3. Install the package in editable mode
 pip install -e .
 
-# 4. Download required NLP models and data
+# 4. Download required NLP models for data preprocessing
 python -m spacy download en_core_web_sm
-python factowl/download_data.py
 ---------
 
 
-# FactOwl: Blazingly fast and modern factchecker
+# FactOwl: Fast and modern factchecker
 
 ## Usage Examples
 
