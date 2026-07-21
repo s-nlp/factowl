@@ -214,13 +214,22 @@ FactOWL is designed to be highly accessible. While the original paper experiment
 If you use FactOWL in your research, demo, or production systems, please cite our SIGIR 2026 paper:
 
 ```bibtex
-@inproceedings{sakhovskiy2026factowl,
-  title={FactOWL: A Cost-Efficient Tool for Long-Form Factuality Evaluation},
-  author={Sakhovskiy, Andrey and Sushko, Nikita and Marina, Maria and Konovalov, Vasily and Tutubalina, Elena and Panchenko, Alexander and Braslavski, Pavel},
-  booktitle={Proceedings of the 49th International ACM SIGIR Conference on Research and Development in Information Retrieval (SIGIR '26)},
-  year={2026},
-  doi={10.1145/3805712.3808373},
-  location={Melbourne, VIC, Australia}
+@inproceedings{10.1145/3805712.3808373,
+author = {Sakhovskiy, Andrey and Sushko, Nikita and Marina, Maria and Konovalov, Vasily and Tutubalina, Elena and Panchenko, Alexander and Braslavski, Pavel},
+title = {FactOWL: A Cost-Efficient Tool for Long-Form Factuality Evaluation},
+year = {2026},
+isbn = {9798400725999},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3805712.3808373},
+doi = {10.1145/3805712.3808373},
+abstract = {The presence of factual hallucinations in large language model (LLM) generations drives the development of retrieval-augmented factuality evaluation tools. However, existing implementations suffer from slow inference, outdated knowledge bases, and the use of paid search and LLM APIs, which hinders research and practical applications. To fill this gap, we propose FactOWL, a FActScore-based Factuality evaluation tool which adopts an Open LLM and real-time Wikipedia search for evaluation of Long-form LLM responses. FactOWL effectively addresses unreliable evidence, incomplete contexts, and entity ambiguity by performing multi-source aggregation over Wikipedia pages and Wikidata triples. FactOWL is at least 10\texttimes{} faster than the pioneering FActScore fact checking tool and its key modifications methods and is freely available on GitHub: https://github.com/s-nlp/factowl.},
+booktitle = {Proceedings of the 49th International ACM SIGIR Conference on Research and Development in Information Retrieval},
+pages = {5209–5214},
+numpages = {6},
+keywords = {llm factuality, factuality evaluation tool, atomic fact generation, fact verification, wikipedia, wikidata, evidence retrieval},
+location = {Australia},
+series = {SIGIR '26}
 }
 ```
 
@@ -228,15 +237,6 @@ If you use FactOWL in your research, demo, or production systems, please cite ou
 
 ## 🙏 Acknowledgments
 
-We acknowledge the computational resources provided by the HPC facilities at HSE University.
-
 We pay our respects to the traditional owners of the lands where SIGIR 2026 was hosted, the peoples of the Woi Wurrung and Boon Wurrung language groups of the eastern Kulin Nation. We pay our respects to their Elders past and present, and extend that respect to all Aboriginal and Torres Strait Islander peoples today and their continuing connection to land, sea, sky, and community.
 ```
 
----
-
-## 🙏 Acknowledgments
-
-We acknowledge the computational resources provided by the HPC facilities at HSE University.
-
-We pay our respects to the traditional owners of the lands where SIGIR 2026 was hosted, the peoples of the Woi Wurrung and Boon Wurrung language groups of the eastern Kulin Nation. We pay our respects to their Elders past and present, and extend that respect to all Aboriginal and Torres Strait Islander peoples today and their continuing connection to land, sea, sky, and community.
