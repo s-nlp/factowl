@@ -115,31 +115,6 @@ You can also provide your own data into the script in the following format:
 ```
 
 
-## 🚀 Quick Start
-
-Evaluate your LLM generations via the Command Line Interface (CLI). FactOWL uses `vLLM` under the hood for maximum throughput.
-
-```bash
-python -m factowl --input_file data/sample_input.json --retriever wikipedia_search
-```
-
-### 📄 Input Data Format
-Provide your data in a structured JSON format. FactOWL handles batch processing automatically:
-
-```json
-{
-  "topics": {
-    "topic_01": "William Post (lottery winner)",
-    "topic_02": "Lanny Flaherty"
-  },
-  "generations": {
-    "topic_01": "William Post (1949-1986) was an American lottery winner who won $16.2 million...",
-    "topic_02": "Lanny Flaherty is an American actor born on December 18, 1949..."
-  }
-}
-```
-
----
 
 ## 🧪 Examples & Notebooks
 
