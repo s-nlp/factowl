@@ -29,7 +29,6 @@ FactOWL decomposes factual evaluation into three transparent, robust stages:
 2. **Evidence Retrieval:** Performs multi-page real-time Wikipedia searches and retrieves verbalized Wikidata triples to cover homonymous topics and rare entities. Passages are reranked using GTR or BM25.
 3. **Fact Verification:** Independently verifies each atomic fact against the retrieved context using a lightweight LLM (e.g., Llama-3-8B-Instruct) accelerated by `vLLM`.
 
-*(📌 **Tip:** Add `assets/pipeline.png` here referencing Figure 1 from your paper)*
 
 ---
 
